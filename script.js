@@ -365,7 +365,7 @@ document.querySelectorAll('.backToMainBtn').forEach(btn => btn.addEventListener(
 }));
 
 document.querySelectorAll('.backToForestMenuBtn').forEach(btn => btn.addEventListener('click', () => {
-  [forestT0View, forestT3View, forestT20View, forestTEteintView].forEach(c => { if(c) c.classList.add('hidden'); });
+  [forestT0View, forestT3View, forestT20View, forestTEteintView, urbanAmbianceView].forEach(c => { if(c) c.classList.add('hidden'); });
   if(forestMenuView) forestMenuView.classList.remove('hidden');
 }));
 
@@ -375,7 +375,7 @@ document.querySelectorAll('.backToUrbanMenuBtn').forEach(btn => btn.addEventList
     saveVicBtn.removeAttribute('data-editing-index');
     saveVicBtn.textContent = "💾 Valider Bilan Victimes";
   }
-  [urbanMessageLibreView, urbanAmbianceView, urbanSapView, urbanFeuView, urbanSRView, urbanGazView, urbanOpeDivView, urbanNautView, urbanRenfortView, urbanVictimsView].forEach(c => { if(c) c.classList.add('hidden'); });
+  [urbanMessageLibreView, urbanSapView, urbanFeuView, urbanSRView, urbanGazView, urbanOpeDivView, urbanNautView, urbanRenfortView, urbanVictimsView].forEach(c => { if(c) c.classList.add('hidden'); });
   if(urbanMenuView) urbanMenuView.classList.remove('hidden');
 }));
 
@@ -385,14 +385,6 @@ if (navMsgLibreBtn) {
   navMsgLibreBtn.addEventListener('click', () => {
     if(urbanMenuView) urbanMenuView.classList.add('hidden');
     if(urbanMessageLibreView) urbanMessageLibreView.classList.remove('hidden');
-  });
-}
-
-const navAmbianceBtn = document.getElementById('navAmbianceUrbaineBtn');
-if (navAmbianceBtn) {
-  navAmbianceBtn.addEventListener('click', () => {
-    if(urbanMenuView) urbanMenuView.classList.add('hidden');
-    if(urbanAmbianceView) urbanAmbianceView.classList.remove('hidden');
   });
 }
 
@@ -421,11 +413,19 @@ document.getElementById('navTableauVictimesBtn')?.addEventListener('click', () =
   addVictimRow(); 
 });
 
-// NAVIGATION SOUS-MENUS FORÊT
+// NAVIGATION SOUS-MENUS FORÊT & AMBIANCE
 document.getElementById('navT0Btn').addEventListener('click', () => { forestMenuView.classList.add('hidden'); forestT0View.classList.remove('hidden'); });
 document.getElementById('navT3Btn').addEventListener('click', () => { forestMenuView.classList.add('hidden'); forestT3View.classList.remove('hidden'); });
 document.getElementById('navT20Btn').addEventListener('click', () => { forestMenuView.classList.add('hidden'); forestT20View.classList.remove('hidden'); });
 document.getElementById('navTEteintBtn').addEventListener('click', () => { forestMenuView.classList.add('hidden'); forestTEteintView.classList.remove('hidden'); });
+
+const navAmbianceBtn = document.getElementById('navAmbianceUrbaineBtn');
+if (navAmbianceBtn) {
+  navAmbianceBtn.addEventListener('click', () => {
+    if(forestMenuView) forestMenuView.classList.add('hidden');
+    if(urbanAmbianceView) urbanAmbianceView.classList.remove('hidden');
+  });
+}
 
 // GESTION DES MESSAGES ET SAUVEGARDES
 function saveMemoToStorage(text, tag, forceUnnumbered = false, isUrban = false, badgeColorStyle = '') {
@@ -611,7 +611,7 @@ window.toggleIncSubOptions = function(type) {
   if (type === 'Véhicule' && vehOpt) vehOpt.classList.remove('hidden');
 };
 
-// VALIDATION & SAUVEGARDE MESSAGE D'AMBIANCE
+// VALIDATION & SAUVEGARDE MESSAGE D'AMBIANCE (RETOUR VERS MENU FORÊT)
 document.getElementById('saveUrbanAmbianceBtn')?.addEventListener('click', () => {
   const localisation = document.getElementById('ambLocalisation').value.trim() || 'Non précisée';
   const acces = document.querySelector('input[name="ambAcces"]:checked')?.value || 'Non précisé';
@@ -689,7 +689,7 @@ document.getElementById('saveUrbanAmbianceBtn')?.addEventListener('click', () =>
   saveMemoToStorage(text, 'Ambiance Urbaine', !isNumbered, true, 'memo-badge-forest');
 
   urbanAmbianceView.classList.add('hidden');
-  urbanMenuView.classList.remove('hidden');
+  forestMenuView.classList.remove('hidden');
 });
 
 // VALIDATION SECOURS À PERSONNE (SAP)
