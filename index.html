@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suivi Ops & Chronologie</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- BANDEAU HORAIRE AÉRONAUTIQUE & NUIT VFR -->
+  <div class="aero-clock-banner">
+    <div class="clock-box"><div class="clock-label">✈️ UTC / Zoulou</div><div id="zoulouClock" class="clock-time clock-time-zoulou">--:--:-- Z</div></div>
+    <div class="clock-box"><div class="clock-label">🕒 Heure Locale</div><div id="localClock" class="clock-time clock-time-local">--:--:--</div></div>
+    <div class="clock-box"><div class="clock-label">🌙 Fin Vol Jour (SS+30)</div><div id="vfrEndClock" class="clock-time clock-time-night">--:--</div></div>
+  </div>
+
+  <!-- BANDEAU SAUVEGARDE, BASCULE RAPIDE SITAC & RESET -->
+  <div class="data-management-bar">
+    <div class="data-bar-title">💾 Fichiers &amp; SiTac</div>
+    <div class="data-bar-btns">
+      <button id="quickSwitchSitacBtn" class="btn-dark" style="font-size:0.78rem; padding:6px 12px;">🎨 Écran SiTac</button>
+      <button id="exportDataBtn" class="btn-secondary" style="font-size:0.78rem; padding:6px 10px;">📥 Sauvegarder</button>
+      <button id="importDataBtn" class="btn-secondary" style="font-size:0.78rem; padding:6px 10px;">📤 Restaurer</button>
+      <input type="file" id="importFileInput" accept=".json" class="hidden">
+      <button id="resetAllDataBtn" class="btn-danger" style="font-size:0.78rem; padding:6px 10px;">🗑️ Reset Tout</button>
+    </div>
+  </div>
+
+  <h1>📋 Suivi Ops & Chronologie</h1>
+
+  <!-- VUE PRINCIPALE -->
+  <div id="mainView">
+    <div class="main-nav-btns">
+      <button id="openUrbanMenuBtn" class="btn-primary" style="padding: 12px; font-size: 0.85rem;">🏢 Messages Urbain</button>
+      <button id="openForestMenuBtn" class="btn-forest" style="padding: 12px; font-size: 0.85rem;">🌲 Messages Forêt</button>
+      <button id="openSoamMenuBtn" class="btn-purple" style="padding: 12px; font-size: 0.85rem;">🎯 Méthode SOAM</button>
+      <button id="openResourcesBtn" class="btn-warning" style="padding: 12px; font-size: 0.85rem;">🚒 Moyens sol</button>
+      <button id="openAirResourcesBtn" class="btn-sky" style="padding: 12px; font-size: 0.85rem; grid-column: span 2;">🚁 Moyens air</button>
+    </div>
+
+    <!-- CARTE DE SAISIE LIBRE (ACCUEIL) -->
+    <div class="card">
+      <div class="form-group"><label>N° Intervention :</label><input type="text" id="numInterventionInput" placeholder="ex: 2026-4521"></div>
+      
+      <div class="form-group">
+        <label>Titre / Badge du message libre :</label>
+        <input type="text" id="freeMessageTagInput" placeholder="ex: CR Libre, Point Radio, Consigne, Remarque...">
+      </div>
+      <div class="form-group">
+        <label>Message libre / Saisie de texte :</label>
+        <textarea id="transcript" placeholder="Saisissez ou collez votre texte librement ici..."></textarea>
+      </div>
+
+      <div class="numbering-box">
+        <label class="checkbox-label">
+          <input type="checkbox" id="noteNumCheck" checked>
+          🔢 Numéroter ce message dans la liste (N°...)
+        </label>
+      </div>
+      <button id="saveBtn" class="btn-success" style="width: 100%; padding: 10px;">💾 Enregistrer le message libre</button>
+    </div>
+
+    <div class="card">
+      <h2>Messages sauvegardés</h2>
+      <div class="scroll-container"><div id="memosList"></div></div>
+    </div>
+  </div>
+<button id="exportPdfReportBtn" class="btn-primary" style="background: #7c3aed; color: white; font-weight: 700; padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+  📄 Générer Rapport PDF
+</button>
+  <!-- VUE : SITAC (PLEIN ÉCRAN) -->
+  <div id="sitacView" class="card hidden fullscreen-sitac">
+    <div class="sitac-toolbar">
+      <button id="backToMessagesFromSitac" class="btn-primary">⬅️ Retour aux messages</button>
+      
+      <div class="color-picker-container">
+        <div class="color-circle active" style="background-color: #000000;" data-color="#000000" title="Noir"></div>
+        <div class="color-circle" style="background-color: #2563eb;" data-color="#2563eb" title="Bleu"></div>
+        <div class="color-circle" style="background-color: #dc2626;" data-color="#dc2626" title="Rouge"></div>
+        <div class="color-circle" style="background-color: #16a34a;" data-color="#16a34a" title="Vert"></div>
+        <div class="color-circle" style="background-color: #ea580c;" data-color="#ea580c" title="Orange"></div>
+        <div class="color-circle" style="background-color: #7c3aed;" data-color="#7c3aed" title="Violet"></div>
+        <div class="color-circle" style="background-color: #ffffff; border: 2px dashed #64748b;" data-color="eraser" title="Gomme"></div>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button id="addSitacTextBtn" class="btn-sky">➕ Ajouter du texte</button>
+        <button id="clearSitacBtn" class="btn-danger">🗑️ Effacer le dessin</button>
+      </div>
+    </div>
+
+    <div id="sitacCanvasContainer">
+      <canvas id="sitacCanvas"></canvas>
+    </div>
+  </div>
+
+  <!-- MENU DÉDIÉ : MESSAGES URBAINS -->
+  <div id="urbanMenuView" class="card hidden">
+    <button class="btn-primary backToMainBtn" style="margin-bottom: 15px;">⬅️ Retour à l'accueil</button>
+    <h2>🏢 Messages de Chronologie Urbain</h2>
+    <div class="urban-nav-grid">
+      <button id="navMessageLibreUrbainBtn" class="btn-orange" style="padding: 15px; font-size: 0.9rem; grid-column: span 2;">📝 Message Libre Urbain</button>
+      <button id="navAmbianceUrbaineBtn" class="btn-forest" style="padding: 15px; font-size: 0.9rem; grid-column: span 2;">📡 Message d'Ambiance</button>
+      <button id="navSapBtn" class="btn-primary" style="padding: 15px; font-size: 0.9rem; background:#dc2626;">🚑 Secours À Personne</button>
+      <button id="navFeuUrbainBtn" class="btn-primary" style="padding: 15px; font-size: 0.9rem;">🔥 Feu Urbain</button>
+      <button id="navSecoursRoutierBtn" class="btn-primary" style="padding: 15px; font-size: 0.9rem;">🚗 Secours Routiers</button>
+      <button id="navFuiteGazBtn" class="btn-primary" style="padding: 15px; font-size: 0.9rem;">⛽ Fuite de Gaz</button>
+      <button id="navOpeDivBtn" class="btn-primary" style="padding: 15px; font-size: 0.9rem;">🛠️ Opé. Diverses</button>
+      <button id="navOpeNautBtn" class="btn-primary" style="padding: 15px; font-size: 0.9rem;">⚓ Opé. Nautiques</button>
+      <button id="navDemandeRenfortBtn" class="btn-primary" style="padding: 15px; font-size: 0.9rem;">👥 Demande Renfort</button>
+      <button id="navTableauVictimesBtn" class="btn-primary" style="padding: 15px; font-size: 0.9rem; grid-column: span 2;">🏥 Tableau Victime(s)</button>
+    </div>
+  </div>
+
+  <!-- VUE URBAIN : FEU URBAIN -->
+  <div id="urbanFeuView" class="card hidden">
+    <button class="btn-primary backToUrbanMenuBtn" style="margin-bottom: 15px;">⬅️ Retour aux messages urbains</button>
+    <h2>🔥 Feu Urbain</h2>
+    <div style="background: #eff6ff; padding: 15px; border-radius: 8px; border: 1px solid #bfdbfe;">
+      
+      <!-- JE VOIS : Feu Urbain -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af; margin-top:0;">🔍 JE VOIS : Feu Urbain</div>
+      <div class="sub-panel" style="margin-bottom:10px;">
+        
+        <!-- Localisation / Bâtiment -->
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:6px;">
+          <input type="text" id="urbRPlus" placeholder="R+..." style="width:70px;">
+          <input type="text" id="urbAuR" placeholder="au R..." style="width:70px;">
+          <label class="checkbox-label" style="display:flex; align-items:center; gap:4px;">
+            <input type="checkbox" id="urbRezDeChaussee"> Simple RdC
+          </label>
+        </div>
+
+        <!-- Usage (Boutons Radio principaux) -->
+        <div style="font-weight:700; font-size:0.85rem; color:#1e40af; margin-bottom:4px;">Usage :</div>
+        <div class="radio-group" style="display:flex; flex-wrap:wrap; gap:15px; margin-bottom:8px;">
+          <label class="checkbox-label"><input type="radio" name="urbUsage" value="Habitation" checked> Habitation</label>
+          <label class="checkbox-label"><input type="radio" name="urbUsage" value="ERP"> ERP</label>
+          <label class="checkbox-label"><input type="radio" name="urbUsage" value="Industrie"> Industrie</label>
+          <label class="checkbox-label"><input type="radio" name="urbUsage" value="Bureaux"> Bureaux</label>
+          <label class="checkbox-label"><input type="radio" name="urbUsage" value="Autre"> Autre</label>
+        </div>
+
+        <!-- SOUS-MENU INDUSTRIE -->
+<div id="subSubMenuIndustrie" style="background:#dbeafe; padding:10px; border-radius:6px; margin-bottom:8px; display:none;">
+  <div style="font-weight:700; font-size:0.8rem; color:#1e40af; margin-bottom:4px;">Classification ICPE / Nomenclatures :</div>
+  <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:8px; font-size:0.85rem;">
+    <label class="checkbox-label"><input type="checkbox" class="indICPECheck" value="ICPE"> ICPE</label>
+    <label class="checkbox-label"><input type="checkbox" class="indICPECheck" value="1xxx"> 1xxx</label>
+    <label class="checkbox-label"><input type="checkbox" class="indICPECheck" value="2xxx"> 2xxx</label>
+    <label class="checkbox-label"><input type="checkbox" class="indICPECheck" value="3xxx"> 3xxx</label>
+    <label class="checkbox-label"><input type="checkbox" class="indICPECheck" value="4xxx (Seveso)"> 4xxx (Seveso)</label>
+    <label class="checkbox-label"><input type="checkbox" class="indICPECheck" value="Autre"> Autre</label>
+  </div>
+  <!-- Conteneur dynamique pour remplacer les x par des chiffres ou préciser -->
+  <div id="dynamicNomenclatureInputs" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+</div>
+
+<!-- SOUS-MENU ERP -->
+<div id="subSubMenuERP" style="background:#dbeafe; padding:10px; border-radius:6px; margin-bottom:8px; display:none;">
+  <div style="font-weight:700; font-size:0.8rem; color:#1e40af; margin-bottom:4px;">Type(s) d'ERP :</div>
+  <div style="display:grid; grid-template-columns: repeat(6, 1fr); gap:6px; margin-bottom:8px; font-size:0.8rem;">
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="J"> J</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="O"> O</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="U"> U</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="R"> R</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="L"> L</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="M"> M</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="N"> N</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="P"> P</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="S"> S</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="T"> T</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="V"> V</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="W"> W</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="X"> X</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="Y"> Y</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="OA"> OA</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="GA"> GA</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="PA"> PA</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="CTS"> CTS</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpTypeCheck" value="EF"> EF</label>
+  </div>
+
+  <div style="font-weight:700; font-size:0.8rem; color:#1e40af; margin-bottom:4px;">Catégorie(s) :</div>
+  <div style="display:flex; flex-wrap:wrap; gap:10px; font-size:0.8rem;">
+    <label class="checkbox-label"><input type="checkbox" class="erpCatCheck" value="1 (+1500)"> 1 (+1500)</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpCatCheck" value="2 (701/1500)"> 2 (701/1500)</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpCatCheck" value="3 (301/700)"> 3 (301/700)</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpCatCheck" value="4 (jusqu'à 300)"> 4 (jusqu'à 300)</label>
+    <label class="checkbox-label"><input type="checkbox" class="erpCatCheck" value="5 (- seuil)"> 5 (- seuil)</label>
+  </div>
+</div>
+
+<!-- SOUS-MENU HABITATION -->
+<div id="subSubMenuHabitation" style="background:#dbeafe; padding:10px; border-radius:6px; margin-bottom:8px; display:none;">
+  <div style="font-weight:700; font-size:0.8rem; color:#1e40af; margin-bottom:6px;">Famille d'habitation :</div>
+  <div style="display:flex; flex-direction:column; gap:6px; font-size:0.85rem;">
+    <label class="checkbox-label"><input type="radio" name="habFamily" value="1re famille (R+1 max, isolé/en bande structures indépendantes)"> 1re famille : R+1 max (isolé / en bande, structures indépendantes)</label>
+    <label class="checkbox-label"><input type="radio" name="habFamily" value="2e famille (R+1 isolé/en bande structures dépendantes, R+3 max)"> 2e famille : R+1 (isolé / en bande, structures dépendantes), R+3 max</label>
+    
+    <div>
+      <label class="checkbox-label"><input type="radio" name="habFamily" value="3e famille (<28m, accessible engin)"> 3e famille : &lt; 28m, accessible engin</label>
+      <div id="subSubMenuFamille3" style="margin-left:20px; margin-top:4px; display:none; gap:12px; flex-wrap:wrap;">
+        <label class="checkbox-label"><input type="checkbox" class="hab3SubCheck" value="3A (R+7 max, 10m max sur étage, RdC voie échelle)"> 3A (R+7 max, 10m max sur étage, RdC voie échelle)</label>
+        <label class="checkbox-label"><input type="checkbox" class="hab3SubCheck" value="3B (autre)"> 3B (autre)</label>
+      </div>
+    </div>
+
+    <label class="checkbox-label"><input type="radio" name="habFamily" value="4e famille (50m max, le reste)"> 4e famille : 50m max, le reste</label>
+  </div>
+</div>
+        <input type="text" id="urbAttenant" placeholder="Attenant à..." style="margin-bottom:6px; width:100%;">
+        <div class="form-row" style="margin-bottom:6px;">
+          <input type="text" id="urbSurfDetruite" placeholder="Surface détruite (m²)">
+          <input type="text" id="urbSurfSol" placeholder="Surface au sol (m²)">
+        </div>
+        <input type="text" id="urbSurfFumees" placeholder="Impact fumées (m²)" style="margin-bottom:8px; width:100%;">
+
+        <div style="font-weight:700; font-size:0.85rem; color:#1e40af; margin-bottom:4px;">Risques particuliers :</div>
+        <div class="checkbox-grid">
+          <label class="checkbox-label"><input type="checkbox" class="urbRisqueCheck" value="Bouteille de gaz"> Bouteille de gaz</label>
+          <label class="checkbox-label"><input type="checkbox" class="urbRisqueCheck" value="Risque chimique"> Risque chimique</label>
+          <label class="checkbox-label"><input type="checkbox" class="urbRisqueCheck" value="Risque électrique"> Risque électrique</label>
+          <label class="checkbox-label"><input type="checkbox" class="urbRisqueCheck" value="Effondrement"> Effondrement</label>
+        </div>
+      </div>
+
+      <!-- JE FAIS : Actions -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af;">⚡ JE FAIS : Actions</div>
+      <div class="sub-panel" style="margin-bottom:10px;">
+        <div class="checkbox-grid" style="margin-bottom:8px;">
+          <label class="checkbox-label"><input type="checkbox" id="urbSauvetageCheck"> Sauvetage</label>
+          <label class="checkbox-label"><input type="checkbox" id="urbMiseSecuCheck"> Mise en sécurité</label>
+          <label class="checkbox-label"><input type="checkbox" id="urbCoupureFluides"> Coupure fluides</label>
+          <label class="checkbox-label"><input type="checkbox" id="urbHBCOCheck"> Mesure HBCO</label>
+        </div>
+        <input type="text" id="urbExtinctionTxt" placeholder="Extinction au moyen de..." style="margin-bottom:6px; width:100%;">
+        <input type="text" id="urbDeblaiTxt" placeholder="Déblai..." style="width:100%;">
+      </div>
+
+      <!-- JE PRÉVOIS -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af;">🔮 JE PRÉVOIS</div>
+      <div class="sub-panel" style="margin-bottom:10px;">
+        <input type="text" id="urbPropagTxt" placeholder="Propagation / risque d'effondrement..." style="margin-bottom:6px; width:100%;">
+        <input type="text" id="urbInterruptionTxt" placeholder="Interruption d'activité..." style="margin-bottom:6px; width:100%;">
+        <input type="text" id="urbRelogementTxt" placeholder="Relogement..." style="width:100%;">
+      </div>
+
+      <div class="numbering-box">
+        <label class="checkbox-label">
+          <input type="checkbox" id="urbFeuNumCheck" checked>
+          🔢 Numéroter ce message dans la liste
+        </label>
+      </div>
+
+      <button id="saveUrbanFeuBtn" class="btn-primary" style="width:100%; padding:12px; margin-top:5px;">💾 Valider Feu Urbain</button>
+    </div>
+  </div>
+
+ <!-- VUE URBAIN : SECOURS À PERSONNE (SAP) -->
+  <div id="urbanSapView" class="card hidden">
+    <button class="btn-primary backToUrbanMenuBtn" style="margin-bottom: 15px;">⬅️ Retour aux messages urbains</button>
+    <h2>🚑 Secours À Personne (SAP)</h2>
+    <div style="background: #fef2f2; padding: 15px; border-radius: 8px; border: 1px solid #fca5a5;">
+      
+      <!-- JE VOIS -->
+      <div class="urban-section-title" style="background:#fee2e2; border-left-color:#dc2626; color:#991b1b; margin-top:0;">🔍 JE VOIS : « En présence de »</div>
+      <div class="sub-panel">
+        <div class="form-row" style="margin-bottom:8px;">
+          <input type="number" id="sapNbrPersons" min="0" placeholder="Nombre de personne(s)">
+          <input type="text" id="sapCodeVictim" placeholder="Code victime (cf p.2)">
+        </div>
+        <div class="form-row" style="margin-bottom:8px;">
+          <input type="number" id="sapManyVictimsNum" min="0" placeholder="En présence de ... (nombreuses) victimes">
+          <input type="text" id="sapIllnessTxt" placeholder="Blessé / malade / malaise / ...">
+        </div>
+        
+        <label class="checkbox-label" style="margin-bottom:6px;"><input type="checkbox" id="sapPsychCheck"> Soins psychiatriques requis, pas de consentement de transport possible (S.P. à la demande du Représentant de l'État : dangereuse pour elle-même)</label>
+        <label class="checkbox-label" style="margin-bottom:6px;"><input type="checkbox" id="sapEbrietyCheck"> Personne présentant les signes d'un état d'ébriété</label>
+        <label class="checkbox-label" style="margin-bottom:8px;"><input type="checkbox" id="sapStreetCheck"> Personne à la rue (Indigente)</label>
+
+        <div style="font-weight:700; color:#991b1b; font-size:0.85rem; margin-top:10px; margin-bottom:4px;">Opération sans victime :</div>
+        <label class="checkbox-label" style="margin-bottom:6px;"><input type="checkbox" id="sapNoVicNoActCheck"> Après reconnaissance, aucune intervention de notre part (pas de blessé, personne partie, etc.)</label>
+        <label class="checkbox-label" style="margin-bottom:8px;"><input type="checkbox" id="sapFalseAlarmCheck"> Après reconnaissance, fausse alerte (pas de témoin ou de requérant à l'adresse indiquée)</label>
+
+        <input type="text" id="sapOtherISee" placeholder="Autres observations SAP..." style="margin-bottom:8px; width:100%;">
+        
+        <div style="background:#fff1f2; border:1px solid #fecdd3; padding:8px; border-radius:4px; font-size:0.75rem; color:#be123c; margin-bottom:4px;">
+          ⚠️ La classification en "Carence" ou en "Urgence" de l'opération ne doit pas faire l'objet d'échanges radios avec le SAMU.
+        </div>
+      </div>
+
+      <!-- JE FAIS -->
+      <div class="urban-section-title" style="background:#fee2e2; border-left-color:#dc2626; color:#991b1b;">⚡ JE FAIS « Procédons à »</div>
+      <div class="checkbox-grid" style="margin-bottom:8px;">
+        <label class="checkbox-label"><input type="checkbox" class="sapActionCheck" value="Reconnaissance"> Reconnaissance</label>
+        <label class="checkbox-label"><input type="checkbox" class="sapActionCheck" value="Balisage et protection"> Balisage et protection</label>
+        <label class="checkbox-label"><input type="checkbox" class="sapActionCheck" value="Bilan"> Bilan</label>
+        <label class="checkbox-label"><input type="checkbox" class="sapActionCheck" value="RCP"> RCP</label>
+        <label class="checkbox-label"><input type="checkbox" class="sapActionCheck" value="Conditionnement victime(s)"> Conditionnement victime(s)</label>
+        <label class="checkbox-label"><input type="checkbox" class="sapActionCheck" value="Mesure d'HBCO"> Mesure d'HBCO</label>
+        <label class="checkbox-label"><input type="checkbox" class="sapActionCheck" value="Opération de longue durée"> Opération de longue durée</label>
+        <label class="checkbox-label"><input type="checkbox" class="sapActionCheck" value="Evacuée sans surveill. voie veineuse"> Evacuée sans surveill. voie veineuse</label>
+        <label class="checkbox-label"><input type="checkbox" class="sapActionCheck" value="Jonction SMUR / Hélico"> Jonction SMUR / Hélico</label>
+        <label class="checkbox-label"><input type="checkbox" class="sapActionCheck" value="Sauvetage / mise en sécurité"> Sauvetage / mise en sécurité</label>
+      </div>
+
+      <div class="sub-panel">
+        <input type="text" id="sapEvacSamuTxt" placeholder="Évacuation après régulation SAMU par... (VSAV, SMUR...)" style="margin-bottom:6px; width:100%;">
+        <div class="form-row" style="margin-bottom:6px;">
+          <input type="text" id="sapReorientFrom" placeholder="Réorientation SAMU de l'hôpital...">
+          <input type="text" id="sapReorientTo" placeholder="vers l'hôpital... (raison)">
+        </div>
+        <input type="text" id="sapEvacOutSectTxt" placeholder="Évacuation vers hôpital... (hors département ou hors secteur)" style="margin-bottom:6px; width:100%;">
+        <input type="text" id="sapDzTransportTxt" placeholder="Transport sur DZ située à..." style="margin-bottom:6px; width:100%;">
+        <textarea id="sapReasonTxt" placeholder="Raison (sauvetage, mise en sécurité, réorientation...)" style="margin-bottom:6px; height:50px; width:100%;"></textarea>
+        <input type="text" id="sapOtherIDo" placeholder="Autres actions..." style="width:100%;">
+      </div>
+
+      <div class="numbering-box">
+        <label class="checkbox-label">
+          <input type="checkbox" id="sapNumCheck" checked>
+          🔢 Numéroter ce message dans la liste
+        </label>
+      </div>
+
+      <button id="saveUrbanSapBtn" class="btn-danger" style="width:100%; padding:12px; margin-top:5px;">💾 Valider Secours À Personne</button>
+    </div>
+  </div>
+
+  <!-- VUE URBAIN : FEU URBAIN -->
+  <div id="urbanFeuView" class="card hidden">
+    <button class="btn-primary backToUrbanMenuBtn" style="margin-bottom: 15px;">⬅️ Retour aux messages urbains</button>
+    <h2>🔥 Message Feu Urbain</h2>
+    <div style="background: #eff6ff; padding: 15px; border-radius: 8px; border: 1px solid #bfdbfe;">
+      
+      <!-- JE VOIS -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af; margin-top:0;">🔍 JE VOIS : « En présence de »</div>
+      <div class="sub-panel">
+        <div class="form-row-3" style="margin-bottom:8px;">
+          <input type="text" id="urbRPlus" placeholder="Bâtiment R+">
+          <input type="text" id="urbAuR" placeholder="au R +/-">
+          <label class="checkbox-label" style="display:flex; align-items:center;"><input type="checkbox" id="urbRezDeChaussee"> Simple RdC</label>
+        </div>
+
+        <div class="form-group" style="margin-bottom:8px;">
+          <label style="font-weight:700; font-size:0.85rem; color:#1e40af;">Usage :</label>
+          <div class="radio-group" style="display:flex; gap:15px; margin-top:4px;">
+            <label class="checkbox-label"><input type="radio" name="urbUsage" value="Habitation" checked> Habitation</label>
+            <label class="checkbox-label"><input type="radio" name="urbUsage" value="Industriel"> Industriel</label>
+            <label class="checkbox-label"><input type="radio" name="urbUsage" value="ERP"> ERP</label>
+            <label class="checkbox-label"><input type="radio" name="urbUsage" value="Agricole"> Agricole</label>
+          </div>
+        </div>
+
+        <input type="text" id="urbAttenant" placeholder="Attenant à (mitoyenneté, entrepôt...)" style="margin-bottom:8px; width:100%;">
+
+        <div class="form-row" style="margin-bottom:8px;">
+          <input type="text" id="urbSurfDetruite" placeholder="Surface détruite (m²)">
+          <input type="text" id="urbSurfSol" placeholder="Surface au sol (m²)">
+        </div>
+
+        <input type="text" id="urbSurfFumees" placeholder="Surface impactée par les fumées (m²)" style="margin-bottom:8px; width:100%;">
+
+        <div style="font-weight:700; font-size:0.85rem; color:#1e40af; margin-top:10px; margin-bottom:4px;">Risques particuliers :</div>
+        <div class="checkbox-grid" style="margin-bottom:4px;">
+          <label class="checkbox-label"><input type="checkbox" class="urbRisqueCheck" value="Gaz"> Gaz</label>
+          <label class="checkbox-label"><input type="checkbox" class="urbRisqueCheck" value="Fioul"> Fioul</label>
+          <label class="checkbox-label"><input type="checkbox" class="urbRisqueCheck" value="Acétylène"> Acétylène</label>
+          <label class="checkbox-label"><input type="checkbox" class="urbRisqueCheck" value="Engrais"> Engrais</label>
+        </div>
+      </div>
+
+      <!-- JE FAIS -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af;">⚡ JE FAIS : « Procédons à »</div>
+      <div class="checkbox-grid" style="margin-bottom:8px;">
+        <label class="checkbox-label"><input type="checkbox" id="urbSauvetageCheck"> Sauvetage</label>
+        <label class="checkbox-label"><input type="checkbox" id="urbMiseSecuCheck"> Mise en sécurité</label>
+        <label class="checkbox-label"><input type="checkbox" id="urbCoupureFluides"> Coupure fluides</label>
+        <label class="checkbox-label"><input type="checkbox" id="urbHBCOCheck"> Mesure HBCO</label>
+      </div>
+
+      <div class="sub-panel" style="margin-bottom:8px;">
+        <input type="text" id="urbExtinctionTxt" placeholder="Extinction au moyen de... (LDV, MEA...)" style="margin-bottom:6px; width:100%;">
+        <input type="text" id="urbDeblaiTxt" placeholder="Déblai / Dégarnissage de..." style="width:100%;">
+      </div>
+
+      <!-- JE PRÉVOIS -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af;">🔮 JE PRÉVOIS</div>
+      <div class="sub-panel" style="margin-bottom:8px;">
+        <input type="text" id="urbPropagTxt" placeholder="Risque propagation / effondrement à..." style="margin-bottom:6px; width:100%;">
+        <input type="text" id="urbInterruptionTxt" placeholder="Interruption d'activité / chômage technique..." style="margin-bottom:6px; width:100%;">
+        <input type="text" id="urbRelogementTxt" placeholder="Relogement (Mairie, famille...)" style="width:100%;">
+      </div>
+
+      <div class="numbering-box">
+        <label class="checkbox-label">
+          <input type="checkbox" id="urbFeuNumCheck" checked>
+          🔢 Numéroter ce message dans la liste
+        </label>
+      </div>
+
+      <button id="saveUrbanFeuBtn" class="btn-primary" style="width:100%; padding:12px; margin-top:5px;">💾 Valider Feu Urbain</button>
+    </div>
+  </div>
+<!-- VUE URBAIN : SECOURS ROUTIERS (SR) -->
+  <div id="urbanSRView" class="card hidden">
+    <button class="btn-primary backToUrbanMenuBtn" style="margin-bottom: 15px;">⬅️ Retour aux messages urbains</button>
+    <h2>🚗 Secours Routiers</h2>
+    <div style="background: #eff6ff; padding: 15px; border-radius: 8px; border: 1px solid #bfdbfe;">
+      
+      <!-- JE VOIS -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af; margin-top:0;">🔍 JE VOIS : Accident de la circulation mettant en cause</div>
+      <div class="sub-panel" style="margin-bottom:10px;">
+        
+        <table class="ops-table" style="margin-bottom:8px; width:100%; border-collapse:collapse;">
+          <thead>
+            <tr style="background:#dbeafe; color:#1e40af; font-size:0.8rem;">
+              <th style="padding:6px; width:90px; text-align:left;">Nombre</th>
+              <th style="padding:6px; width:110px; text-align:left;">Composition</th>
+              <th style="padding:6px; text-align:left;">Divers / Précisions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:4px;"><input type="number" id="srNbrPietons" min="0" value="0" style="width:100%;"></td>
+              <td style="padding:4px; font-weight:600; font-size:0.85rem;">Piétons</td>
+              <td style="padding:4px;"><input type="text" id="srPrecPietons" placeholder="-" style="width:100%;"></td>
+            </tr>
+            <tr>
+              <td style="padding:4px;"><input type="number" id="srNbr2Roues" min="0" value="0" style="width:100%;"></td>
+              <td style="padding:4px; font-weight:600; font-size:0.85rem;">2 roues</td>
+              <td style="padding:4px;"><input type="text" id="srPrec2Roues" placeholder="Moto, vélo..." style="width:100%;"></td>
+            </tr>
+            <tr>
+              <td style="padding:4px;"><input type="number" id="srNbrVL" min="0" value="0" style="width:100%;"></td>
+              <td style="padding:4px; font-weight:600; font-size:0.85rem;">VL</td>
+              <td style="padding:4px;"><input type="text" id="srPrecVL" placeholder="Carburations/Élec/Feu" style="width:100%;"></td>
+            </tr>
+            <tr>
+              <td style="padding:4px;"><input type="number" id="srNbrPL" min="0" value="0" style="width:100%;"></td>
+              <td style="padding:4px; font-weight:600; font-size:0.85rem;">PL</td>
+              <td style="padding:4px;"><input type="text" id="srPrecPL" placeholder="Chargement, sol./liq./gaz" style="width:100%;"></td>
+            </tr>
+            <tr>
+              <td style="padding:4px;"><input type="number" id="srNbrTram" min="0" value="0" style="width:100%;"></td>
+              <td style="padding:4px; font-weight:600; font-size:0.85rem;">TRAM</td>
+              <td style="padding:4px;"><input type="text" id="srPrecTram" placeholder="Ligne N°..." style="width:100%;"></td>
+            </tr>
+            <tr>
+              <td style="padding:4px;"><input type="number" id="srNbrTrain" min="0" value="0" style="width:100%;"></td>
+              <td style="padding:4px; font-weight:600; font-size:0.85rem;">Train</td>
+              <td style="padding:4px;"><input type="text" id="srPrecTrain" placeholder="Ligne N°..." style="width:100%;"></td>
+            </tr>
+            <tr>
+              <td style="padding:4px;"><input type="number" id="srNbrBus" min="0" value="0" style="width:100%;"></td>
+              <td style="padding:4px; font-weight:600; font-size:0.85rem;">Bus</td>
+              <td style="padding:4px;"><input type="text" id="srPrecBus" placeholder="Scolaire, tourisme, nom société" style="width:100%;"></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="form-row" style="margin-bottom:6px;">
+          <div><label style="font-size:0.75rem; font-weight:700; color:#1e40af;">Code Danger :</label><input type="text" id="srCodeDanger" placeholder="ex: 33"></div>
+          <div><label style="font-size:0.75rem; font-weight:700; color:#1e40af;">Code Matière :</label><input type="text" id="srCodeMatiere" placeholder="ex: 1203"></div>
+        </div>
+
+        <label class="checkbox-label" style="margin-bottom:4px;"><input type="checkbox" id="srFuiteMatiereCheck" onchange="document.getElementById('srFuiteTxt').style.display = this.checked ? 'block' : 'none'"> Présence de fuite de matière</label>
+        <input type="text" id="srFuiteTxt" placeholder="Phase liq./gaz, localisation de la fuite..." style="margin-bottom:8px; width:100%;">
+
+        <div style="font-size:0.8rem; font-weight:700; color:#1e40af; margin-bottom:4px;">État de la circulation :</div>
+        <div class="radio-group" style="display:flex; gap:12px; margin-bottom:6px;">
+          <label class="checkbox-label"><input type="radio" name="srCircStatus" value="Ralentie"> Ralentie</label>
+          <label class="checkbox-label"><input type="radio" name="srCircStatus" value="Déviée"> Déviée</label>
+          <label class="checkbox-label"><input type="radio" name="srCircStatus" value="Coupée"> Coupée</label>
+          <label class="checkbox-label"><input type="radio" name="srCircStatus" value="Alternée"> Alternée</label>
+        </div>
+        <div class="form-row">
+          <input type="text" id="srCircSens" placeholder="Dans le sens...">
+          <input type="text" id="srCircVoies" placeholder="Sur ... voies">
+        </div>
+      </div>
+
+      <!-- JE FAIS -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af;">⚡ JE FAIS : Actions SR</div>
+      <div class="checkbox-grid" style="margin-bottom:8px;">
+        <label class="checkbox-label"><input type="checkbox" class="srActionCheck" value="Balisage / Protection"> Balisage / Protection</label>
+        <label class="checkbox-label"><input type="checkbox" class="srActionCheck" value="Désincar. / Dégagement"> Désincar. / Dégagement</label>
+        <label class="checkbox-label"><input type="checkbox" class="srActionCheck" value="Conditionnement victime(s)"> Conditionnement victime(s)</label>
+        <label class="checkbox-label"><input type="checkbox" class="srActionCheck" value="Tapis de mousse / LDV"> Tapis de mousse / LDV</label>
+        <label class="checkbox-label"><input type="checkbox" class="srActionCheck" value="Endiguement écoulement"> Endiguement écoulement</label>
+        <label class="checkbox-label"><input type="checkbox" class="srActionCheck" value="Relevé explosimétrie"> Relevé explosimétrie</label>
+      </div>
+
+      <div class="sub-panel" style="margin-bottom:8px;">
+        <input type="text" id="srJonctionSmurTxt" placeholder="Jonction SMUR / Hélico" style="margin-bottom:6px; width:100%;">
+        <input type="text" id="srPointEngagementTxt" placeholder="Point engagement renforts" style="width:100%;">
+      </div>
+
+      <div class="numbering-box">
+        <label class="checkbox-label">
+          <input type="checkbox" id="srNumCheck" checked>
+          🔢 Numéroter ce message dans la liste
+        </label>
+      </div>
+
+      <button id="saveUrbanSRBtn" class="btn-primary" style="width:100%; padding:12px; margin-top:5px;">💾 Valider Secours Routiers</button>
+    </div>
+  </div>
+  <!-- VUE URBAIN : FUITE DE GAZ -->
+  <div id="urbanGazView" class="card hidden">
+    <button class="btn-primary backToUrbanMenuBtn" style="margin-bottom: 15px;">⬅️ Retour aux messages urbains</button>
+    <h2>⛽ Fuite de Gaz</h2>
+    <div style="background: #eff6ff; padding: 15px; border-radius: 8px; border: 1px solid #bfdbfe;">
+      
+      <!-- JE VOIS : Fuite de GAZ -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af; margin-top:0;">🔍 JE VOIS : Fuite de GAZ</div>
+      <div class="sub-panel" style="margin-bottom:10px;">
+        <div class="radio-group" style="display:flex; gap:20px; margin-bottom:6px;">
+          <label class="checkbox-label"><input type="radio" name="gazVanne" value="Ouverte" checked> Ouverte</label>
+          <label class="checkbox-label"><input type="radio" name="gazVanne" value="Fermée"> Fermée</label>
+          <label class="checkbox-label"><input type="radio" name="gazVanne" value="Enflammée"> Enflammée</label>
+        </div>
+        <div class="radio-group" style="display:flex; gap:20px; margin-bottom:8px;">
+          <label class="checkbox-label"><input type="radio" name="gazEmplacement" value="Coffret gaz en façade" checked> Coffret gaz en façade</label>
+          <label class="checkbox-label"><input type="radio" name="gazEmplacement" value="Voie Publique (VP)"> Voie Publique (VP)</label>
+        </div>
+
+        <div class="form-row" style="margin-bottom:6px;">
+          <div>
+            <label style="font-size:0.75rem; font-weight:700; color:#1e40af;">Origine :</label>
+            <select id="gazOrigineSelect" style="width:100%; padding:6px; border-radius:4px; border:1px solid #cbd5e1;">
+              <option value="Travaux sur VP">Travaux sur VP</option>
+              <option value="Défaut technique / Corrosion">Défaut technique / Corrosion</option>
+              <option value="Arrachement / AVP">Arrachement / AVP</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:0.75rem; font-weight:700; color:#1e40af;">Pression conduite :</label>
+            <select id="gazPressionSelect" style="width:100%; padding:6px; border-radius:4px; border:1px solid #cbd5e1;">
+              <option value="Basse Pression">Basse Pression</option>
+              <option value="Moyenne Pression (MP)">Moyenne Pression (MP)</option>
+              <option value="Haute Pression (HP)">Haute Pression (HP)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <input type="text" id="gazDiametre" placeholder="Diamètre (mm)">
+          <input type="text" id="gazAbonnes" placeholder="Nbre abonnés concernés">
+        </div>
+      </div>
+
+      <!-- Bâtiments & Personnes Concernés -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af;">🏢 Bâtiments &amp; Personnes Concernés</div>
+      <div class="sub-panel" style="margin-bottom:10px;">
+        <table class="ops-table" style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+          <thead>
+            <tr style="background:#dbeafe; color:#1e40af;">
+              <th style="padding:6px; text-align:left; width:110px;">Type</th>
+              <th style="padding:6px; text-align:left; width:70px;">Nombre</th>
+              <th style="padding:6px; text-align:left;">Adresse / Nom</th>
+              <th style="padding:6px; text-align:left; width:80px;">Évacuation</th>
+              <th style="padding:6px; text-align:left; width:80px;">Confinement</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:4px; font-weight:600;">Maisons</td>
+              <td style="padding:4px;"><input type="number" id="gazBatNbr_0" min="0" value="0" style="width:100%;"></td>
+              <td style="padding:4px;"><input type="text" id="gazBatAdr_0" placeholder="Adresse..." style="width:100%;"></td>
+              <td style="padding:4px;"><input type="number" id="gazBatEvac_0" min="0" value="0" style="width:100%;"></td>
+              <td style="padding:4px;"><input type="number" id="gazBatConf_0" min="0" value="0" style="width:100%;"></td>
+            </tr>
+            <tr>
+              <td style="padding:4px; font-weight:600;">Immeubles</td>
+              <td style="padding:4px;"><input type="number" id="gazBatNbr_1" min="0" value="0" style="width:100%;"></td>
+              <td style="padding:4px;"><input type="text" id="gazBatAdr_1" placeholder="R+..." style="width:100%;"></td>
+              <td style="padding:4px;"><input type="number" id="gazBatEvac_1" min="0" value="0" style="width:100%;"></td>
+              <td style="padding:4px;"><input type="number" id="gazBatConf_1" min="0" value="0" style="width:100%;"></td>
+            </tr>
+            <tr>
+              <td style="padding:4px; font-weight:600;">ERP / Commerces</td>
+              <td style="padding:4px;"><input type="number" id="gazBatNbr_2" min="0" value="0" style="width:100%;"></td>
+              <td style="padding:4px;"><input type="text" id="gazBatAdr_2" placeholder="Nom établissement..." style="width:100%;"></td>
+              <td style="padding:4px;"><input type="number" id="gazBatEvac_2" min="0" value="0" style="width:100%;"></td>
+              <td style="padding:4px;"><input type="number" id="gazBatConf_2" min="0" value="0" style="width:100%;"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- JE FAIS : Procédure, Explosimétrie & Actions -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af;">⚡ JE FAIS : Procédure, Explosimétrie &amp; Actions</div>
+      <div class="sub-panel" style="margin-bottom:10px;">
+        <div class="radio-group" style="display:flex; gap:20px; margin-bottom:8px;">
+          <label class="checkbox-label"><input type="radio" name="gazPerimetre" value="PGC (Périmètre 50m)" checked> PGC (Périmètre 50m)</label>
+          <label class="checkbox-label"><input type="radio" name="gazPerimetre" value="PGR (Exclusion 50m / Soutien 100m)"> PGR (Exclusion 50m / Soutien 100m)</label>
+        </div>
+
+        <div style="font-size:0.8rem; font-weight:700; color:#1e40af; margin-bottom:4px;">Mesures Explosimétriques (% LIE) :</div>
+        <div class="form-row" style="margin-bottom:6px;">
+          <input type="text" id="gazExp10m" placeholder="à 10m de la source">
+          <input type="text" id="gazExpEaux" placeholder="Eaux pluviales">
+          <input type="text" id="gazExpAssain" placeholder="Assainissement">
+        </div>
+        <div class="form-row" style="margin-bottom:6px;">
+          <input type="text" id="gazExpCoffres" placeholder="Coffres GAZ / Caves" style="flex:1;">
+          <label class="checkbox-label" style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="gazExpNullesCheck"> Non significatives / nulles</label>
+        </div>
+
+        <div class="checkbox-grid" style="margin-bottom:6px;">
+          <label class="checkbox-label"><input type="checkbox" class="gazActionCheck" value="LDV en attente"> LDV en attente</label>
+          <label class="checkbox-label"><input type="checkbox" class="gazActionCheck" value="LDV en diffusé vers source"> LDV en diffusé vers source</label>
+          <label class="checkbox-label"><input type="checkbox" class="gazActionCheck" value="Ventilation naturelle"> Ventilation naturelle</label>
+          <label class="checkbox-label"><input type="checkbox" class="gazActionCheck" value="Ventilation artificielle"> Ventilation artificielle</label>
+          <label class="checkbox-label"><input type="checkbox" class="gazActionCheck" value="PC Inter-services"> PC Inter-services</label>
+          <label class="checkbox-label"><input type="checkbox" class="gazActionCheck" value="Fin de procédure / Risque maîtrisé"> Fin de procédure / Risque maîtrisé</label>
+        </div>
+
+        <input type="text" id="gazFermetureCompteurTxt" placeholder="Fermeture compteur de..." style="width:100%;">
+      </div>
+
+      <!-- JE PRÉVOIS -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af;">🔮 JE PRÉVOIS</div>
+      <div class="sub-panel" style="margin-bottom:10px;">
+        <input type="text" id="gazPrevEvacConfTxt" placeholder="Évacuation / confinement de ... personnes" style="margin-bottom:6px; width:100%;">
+        <label class="checkbox-label" style="margin-bottom:6px; display:block;"><input type="checkbox" id="gazPrevLongueDureeCheck"> Opération de longue durée</label>
+        <input type="text" id="gazPrevTempsPurgeTxt" placeholder="Temps de coupure / purge estimé à..." style="margin-bottom:6px; width:100%;">
+        <input type="text" id="gazPrevAutreTxt" placeholder="Autre prévision..." style="width:100%;">
+      </div>
+
+      <div class="numbering-box">
+        <label class="checkbox-label">
+          <input type="checkbox" id="gazNumCheck" checked>
+          🔢 Numéroter ce message dans la liste
+        </label>
+      </div>
+
+      <button id="saveUrbanGazBtn" class="btn-primary" style="width:100%; padding:12px; margin-top:5px;">💾 Valider Fuite de Gaz</button>
+    </div>
+  </div>
+
+  <!-- VUE URBAIN : OPÉRATIONS DIVERSES (EN DEUX PARTIES) -->
+  <div id="urbanOpeDivView" class="card hidden">
+    <button class="btn-primary backToUrbanMenuBtn" style="margin-bottom: 15px;">⬅️ Retour aux messages urbains</button>
+    <h2>🛠️ Opérations Diverses</h2>
+    <div style="background: #eff6ff; padding: 15px; border-radius: 8px; border: 1px solid #bfdbfe;">
+      
+      <!-- JE VOIS -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af; margin-top:0;">🔍 JE VOIS : « En présence de »</div>
+      <div class="sub-panel" style="margin-bottom:10px;">
+        
+        <!-- Mauvais fonctionnement -->
+        <label class="checkbox-label" style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+          <input type="checkbox" id="divMauvaisFctCheck"> Mauvais fonctionnement de :
+        </label>
+        <input type="text" id="divMauvaisFctTxt" placeholder="Précisez le dysfonctionnement..." style="margin-bottom:8px; width:100%;">
+
+        <!-- Court-circuit -->
+        <label class="checkbox-label" style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+          <input type="checkbox" id="divCourtCircCheck"> Court-circuit Intérieur / Extérieur :
+        </label>
+        <input type="text" id="divCourtCircTxt" placeholder="Précisez la nature / localisation..." style="margin-bottom:8px; width:100%;">
+
+        <!-- Chute d'objets -->
+        <div style="font-weight:700; font-size:0.85rem; color:#1e40af; margin-bottom:4px;">Chute d'objets :</div>
+        <div class="checkbox-grid" style="margin-bottom:4px;">
+          <label class="checkbox-label"><input type="checkbox" id="divCableCheck"> Câble (HTA / HTB / MT / BT / téléphonique...)</label>
+          <label class="checkbox-label"><input type="checkbox" id="divObjetMenacantCheck"> Objet menaçant de tomber / risque effondrement sur :</label>
+        </div>
+        <div style="display:flex; gap:20px; margin-left:20px; margin-bottom:6px;">
+          <label class="checkbox-label"><input type="checkbox" id="divMenacantVP"> VP</label>
+          <label class="checkbox-label"><input type="checkbox" id="divMenacantBat"> Bâtiment</label>
+        </div>
+        <input type="text" id="divObjetRisqueTxt" placeholder="Précision sur l'objet / risque..." style="margin-bottom:8px; width:100%;">
+
+        <!-- Animal -->
+        <div style="font-weight:700; font-size:0.85rem; color:#1e40af; margin-bottom:4px;">Animal :</div>
+        <div class="form-row" style="margin-bottom:4px;">
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label class="checkbox-label"><input type="checkbox" id="divAnimalBlesse"> Blessé</label>
+            <label class="checkbox-label"><input type="checkbox" id="divAnimalCoince"> Coincé</label>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label class="checkbox-label"><input type="checkbox" id="divAnimalPerche"> Perché</label>
+            <label class="checkbox-label"><input type="checkbox" id="divAnimalDangereux"> Dangereux / Nuisible</label>
+          </div>
+        </div>
+        <input type="text" id="divAnimalTypeTxt" placeholder="Type d'animal &amp; détails (chien, chat, hyménoptère...)" style="margin-bottom:8px; width:100%;">
+
+        <!-- Fuite d'eau / Local inondé -->
+        <div style="font-weight:700; font-size:0.85rem; color:#1e40af; margin-bottom:4px;">Fuite d'eau / Local inondé :</div>
+        <div class="form-row" style="margin-bottom:6px;">
+          <input type="text" id="divFuiteOu" placeholder="Où">
+          <input type="text" id="divFuitePourquoi" placeholder="Due à quoi">
+        </div>
+        <div class="form-row" style="margin-bottom:8px;">
+          <input type="text" id="divFuiteEntraine" placeholder="Ayant entraîné">
+          <input type="text" id="divFuiteSurfaces" placeholder="Surfaces et volumes concernés">
+        </div>
+
+        <!-- Relevage de personnes - PRPA -->
+        <div style="font-weight:700; font-size:0.85rem; color:#1e40af; margin-bottom:4px;">Relevage de personnes - PRPA :</div>
+        <div class="form-row" style="margin-bottom:6px;">
+          <input type="text" id="divPrpaCirc" placeholder="Circonstances">
+          <input type="text" id="divPrpaCode" placeholder="Code">
+        </div>
+
+        <input type="text" id="divObservations" placeholder="Autres observations..." style="width:100%;">
+      </div>
+
+      <!-- JE FAIS -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af;">⚡ JE FAIS : « Procédons à »</div>
+      <div class="sub-panel" style="margin-bottom:10px;">
+        <div class="checkbox-grid" style="margin-bottom:8px;">
+          <label class="checkbox-label"><input type="checkbox" class="divActionCheck" value="Reconnaissance"> Reconnaissance</label>
+          <label class="checkbox-label"><input type="checkbox" class="divActionCheck" value="Mesure de CO"> Mesure de CO</label>
+          <label class="checkbox-label"><input type="checkbox" class="divActionCheck" value="Balisage et protection"> Balisage et protection</label>
+          <label class="checkbox-label"><input type="checkbox" class="divActionCheck" value="Fermeture vanne / compteur"> Fermeture vanne / compteur</label>
+          <label class="checkbox-label"><input type="checkbox" class="divActionCheck" value="Épuisement / assèchement"> Épuisement / assèchement</label>
+          <label class="checkbox-label"><input type="checkbox" class="divActionCheck" value="Relevage de personnes"> Relevage de personnes</label>
+        </div>
+
+        <input type="text" id="divMiseSecuTxt" placeholder="Mise en sécurité / Sauvetage de..." style="margin-bottom:6px; width:100%;">
+        <input type="text" id="divEtaiementTxt" placeholder="Étaiement de..." style="margin-bottom:6px; width:100%;">
+        <input type="text" id="divBachageTxt" placeholder="Bâchage de ... m² de toiture" style="margin-bottom:6px; width:100%;">
+        <input type="text" id="divTronconnageTxt" placeholder="Tronçonnage de..." style="margin-bottom:6px; width:100%;">
+        <input type="text" id="divAnimalNeutralisationTxt" placeholder="Sauvetage / Mise en sécurité / Neutralisation / Destruction animal..." style="margin-bottom:10px; width:100%;">
+
+        <div style="font-weight:700; font-size:0.85rem; color:#1e40af; margin-bottom:4px;">Ouverture de porte :</div>
+        <div class="checkbox-grid" style="margin-bottom:8px;">
+          <label class="checkbox-label"><input type="checkbox" id="divPorteFermeeCheck"> La fermeture des accès est réalisée</label>
+          <label class="checkbox-label"><input type="checkbox" id="divPorteNonRefermeeCheck"> Locaux non refermés, garde des biens non assurée (Police non nécessaire SLL, avisée par CTA-CODIS)</label>
+        </div>
+
+        <div style="font-weight:700; font-size:0.85rem; color:#1e40af; margin-bottom:4px;">Ascenseur :</div>
+        <div class="checkbox-grid">
+          <label class="checkbox-label"><input type="checkbox" id="divAscCoupureCheck"> Coupure de la force motrice</label>
+          <label class="checkbox-label"><input type="checkbox" id="divAscPortesCheck"> Vérification des portes palières</label>
+        </div>
+      </div>
+
+      <!-- JE PRÉVOIS -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af;">🔮 JE PRÉVOIS</div>
+      <div class="sub-panel" style="margin-bottom:10px;">
+        <label class="checkbox-label" style="display:block; margin-bottom:6px;"><input type="checkbox" id="divPrevLongueDureeCheck"> Opération de longue durée</label>
+        <input type="text" id="divPrevImpactResident" placeholder="Impact sur les ... résidents (détailler)" style="margin-bottom:6px; width:100%;">
+        <input type="text" id="divPrevInterruption" placeholder="Interruption d'activité de ... jours ou chômage technique de ... pers." style="margin-bottom:6px; width:100%;">
+        <input type="text" id="divPrevRelogement" placeholder="Pas de relogement OU Relogement de ... (par : famille, mairie, autre)" style="margin-bottom:6px; width:100%;">
+        <input type="text" id="divPrevEffondrement" placeholder="Risque d'effondrement de..." style="margin-bottom:6px; width:100%;">
+        <input type="text" id="divPrevAutre" placeholder="Autre prévision..." style="width:100%;">
+      </div>
+
+      <div class="numbering-box">
+        <label class="checkbox-label">
+          <input type="checkbox" id="opeDivNumCheck" checked>
+          🔢 Numéroter ce message dans la liste
+        </label>
+      </div>
+
+      <button id="saveUrbanOpeDivBtn" class="btn-primary" style="width:100%; padding:12px; margin-top:5px;">💾 Valider Opérations Diverses</button>
+    </div>
+  </div>
+
+  <!-- VUE URBAIN : OPÉRATIONS NAUTIQUES (EN DEUX PARTIES) -->
+  <div id="urbanNautView" class="card hidden">
+    <button class="btn-primary backToUrbanMenuBtn" style="margin-bottom: 15px;">⬅️ Retour aux messages urbains</button>
+    <h2>⚓ Opérations Nautiques</h2>
+    <div style="background: #eff6ff; padding: 15px; border-radius: 8px; border: 1px solid #bfdbfe;">
+      
+      <!-- JE VOIS -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af; margin-top:0;">🔍 JE VOIS : « En présence de »</div>
+      <div class="sub-panel" style="margin-bottom:10px;">
+        
+        <div style="font-weight:700; font-size:0.85rem; color:#1e40af; margin-bottom:4px;">Personne / animal :</div>
+        <div class="checkbox-grid" style="margin-bottom:6px;">
+          <label class="checkbox-label"><input type="checkbox" id="nautTombeeLeau"> Tombée à l'eau</label>
+          <label class="checkbox-label"><input type="checkbox" id="nautEnvasee"> Envasée</label>
+          <label class="checkbox-label"><input type="checkbox" id="nautNoyee"> Noyée</label>
+          <label class="checkbox-label"><input type="checkbox" id="nautCorpsFlottant"> Corps flottant</label>
+        </div>
+
+        <div style="font-weight:700; font-size:0.85rem; color:#1e40af; margin-bottom:4px;">Embarcation en difficulté :</div>
+        <div class="checkbox-grid" style="margin-bottom:8px;">
+          <label class="checkbox-label"><input type="checkbox" id="nautDerive"> À la dérive (avarie...)</label>
+          <label class="checkbox-label"><input type="checkbox" id="nautEchouee"> Échouée</label>
+          <label class="checkbox-label"><input type="checkbox" id="nautFeu"> Feu</label>
+          <label class="checkbox-label"><input type="checkbox" id="nautVoieEau"> Voie d'eau</label>
+          <label class="checkbox-label"><input type="checkbox" id="nautChaviree"> Chavirée</label>
+          <label class="checkbox-label"><input type="checkbox" id="nautMouillage"> Au mouillage</label>
+        </div>
+
+        <div style="background:#dbeafe; padding:10px; border-radius:6px; margin-bottom:8px;">
+          <div style="font-weight:700; font-size:0.85rem; color:#1e40af; margin-bottom:4px;">À usage de transport de :</div>
+          <div class="radio-group" style="display:flex; gap:20px; margin-bottom:6px;">
+            <label class="checkbox-label"><input type="radio" name="nautUsageTransport" value="Personnes (collectif / privé)" checked> Personnes (collectif / privé)</label>
+            <label class="checkbox-label"><input type="radio" name="nautUsageTransport" value="Marchandises"> Marchandises</label>
+          </div>
+          <input type="text" id="nautNatureMarchandises" placeholder="Nature des marchandises..." style="margin-bottom:6px; width:100%;">
+          <div class="form-row" style="margin-bottom:6px;">
+            <input type="text" id="nautNomImmat" placeholder="Nom et immatriculation">
+            <input type="text" id="nautDimensions" placeholder="Dimensions">
+          </div>
+          <div style="font-weight:700; font-size:0.8rem; color:#1e40af; margin-bottom:2px;">Nombre de personnes à bord :</div>
+          <div class="form-row-3">
+            <input type="number" id="nautNautNbrTotal" min="0" placeholder="Total">
+            <input type="number" id="nautNbrEquipage" min="0" placeholder="Équipage">
+            <input type="number" id="nautNbrPassagers" min="0" placeholder="Passagers">
+          </div>
+        </div>
+
+        <label class="checkbox-label" style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+          <input type="checkbox" id="nautVehiculeLeauCheck"> Véhicule tombé à l'eau : Présence / absence de victime(s)
+        </label>
+
+        <div style="font-weight:700; font-size:0.85rem; color:#1e40af; margin-bottom:4px;">Inondation :</div>
+        <input type="text" id="nautInondationDesc" placeholder="Hauteur d'eau, superficie, enjeux..." style="margin-bottom:6px; width:100%;">
+        <div class="form-row">
+          <input type="text" id="nautMeteoMaree" placeholder="Conditions de marées et météo">
+          <input type="text" id="nautBilanVictimes" placeholder="Bilan victimes (si applicable)">
+        </div>
+      </div>
+
+      <!-- JE FAIS -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af;">⚡ JE FAIS : « Procédons à »</div>
+      <div class="sub-panel" style="margin-bottom:10px;">
+        <div class="checkbox-grid" style="margin-bottom:8px;">
+          <label class="checkbox-label"><input type="checkbox" class="nautActionCheck" value="Reconnaissance terrestre / nautique"> Reconnaissance terrestre / nautique</label>
+          <label class="checkbox-label"><input type="checkbox" class="nautActionCheck" value="Prise de contact CdB"> Prise de contact CdB</label>
+          <label class="checkbox-label"><input type="checkbox" class="nautActionCheck" value="Recherche"> Recherche</label>
+          <label class="checkbox-label"><input type="checkbox" class="nautActionCheck" value="Sauvetage / mise en sécurité"> Sauvetage / mise en sécurité</label>
+          <label class="checkbox-label"><input type="checkbox" class="nautActionCheck" value="Prise en charge victime(s)"> Prise en charge victime(s)</label>
+          <label class="checkbox-label"><input type="checkbox" class="nautActionCheck" value="Contact Capitainerie / CROSSA"> Contact Capitainerie / CROSSA</label>
+        </div>
+
+        <input type="text" id="nautEvacEmbarcation" placeholder="Évacuation de l'embarcation vers le point de débarquement suivant..." style="margin-bottom:6px; width:100%;">
+        <input type="text" id="nautPrvSitu" placeholder="PRV situé à..." style="margin-bottom:6px; width:100%;">
+        <input type="text" id="nautPrmSitu" placeholder="PRM situé à..." style="margin-bottom:6px; width:100%;">
+        <div class="form-row">
+          <input type="text" id="nautSectorisation" placeholder="Sectorisation">
+          <input type="text" id="nautPcSitu" placeholder="PC situé à">
+        </div>
+      </div>
+
+      <!-- JE PRÉVOIS -->
+      <div class="urban-section-title" style="background:#dbeafe; border-left-color:#3b82f6; color:#1e40af;">🔮 JE PRÉVOIS</div>
+      <div class="sub-panel" style="margin-bottom:10px;">
+        <input type="text" id="nautDifficulteesParticulieres" placeholder="Difficultés particulières..." style="margin-bottom:6px; width:100%;">
+        <input type="text" id="nautRisqueSubmersion" placeholder="Risque de submersion dans un délai de..." style="margin-bottom:6px; width:100%;">
+        <div style="display:flex; gap:20px; margin-bottom:6px;">
+          <label class="checkbox-label"><input type="checkbox" id="nautPrevLongueDureeCheck"> Opération de longue durée</label>
+          <label class="checkbox-label"><input type="checkbox" id="nautRisquePollutionCheck"> Risque de pollution</label>
+        </div>
+        <input type="text" id="nautAutrePrevision" placeholder="Autre prévision..." style="width:100%;">
+      </div>
+
+      <div class="numbering-box">
+        <label class="checkbox-label">
+          <input type="checkbox" id="nautNumCheck" checked>
+          🔢 Numéroter ce message dans la liste
+        </label>
+      </div>
+
+      <button id="saveUrbanNautBtn" class="btn-primary" style="width:100%; padding:12px; margin-top:5px;">💾 Valider Opérations Nautiques</button>
+    </div>
+  </div>
+
+  <!-- VUE URBAIN : DEMANDE DE RENFORTS -->
+  <div id="urbanRenfortView" class="card hidden">
+    <button class="btn-primary backToUrbanMenuBtn" style="margin-bottom: 15px;">⬅️ Retour aux messages urbains</button>
+    <h2>👥 Demande de Renforts</h2>
+    <div style="background: #fffbeb; padding: 15px; border-radius: 8px; border: 1px solid #fde68a;">
+      
+      <!-- Pompiers - (Nombre de véhicules que l'on veut sur les lieux) -->
+      <div class="urban-section-title" style="background:#fef3c7; border-left-color:#d97706; color:#92400e; margin-top:0;">🚒 Pompiers - (Nombre de véhicules que l'on veut sur les lieux)</div>
+      <div class="sub-panel" style="margin-bottom:10px;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="number" id="renfNbrEP6" min="0" value="0" style="width: 70px;">
+            <label style="font-size: 0.85rem; font-weight: 600; color: #92400e;">EP6</label>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="number" id="renfNbrVSAV" min="0" value="0" style="width: 70px;">
+            <label style="font-size: 0.85rem; font-weight: 600; color: #92400e;">VSAV</label>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="number" id="renfNbrECH" min="0" value="0" style="width: 70px;">
+            <label style="font-size: 0.85rem; font-weight: 600; color: #92400e;">ECH</label>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="number" id="renfNbrVSR" min="0" value="0" style="width: 70px;">
+            <label style="font-size: 0.85rem; font-weight: 600; color: #92400e;">VSR</label>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="number" id="renfNbrCD12" min="0" value="0" style="width: 70px;">
+            <label style="font-size: 0.85rem; font-weight: 600; color: #92400e;">CD1/CD2</label>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="number" id="renfNbrSMUR" min="0" value="0" style="width: 70px;">
+            <label style="font-size: 0.85rem; font-weight: 600; color: #92400e;">SMUR</label>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="number" id="renfNbrHelico" min="0" value="0" style="width: 70px;">
+            <label style="font-size: 0.85rem; font-weight: 600; color: #92400e;">Hélico</label>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="number" id="renfNbrUnites" min="0" value="0" style="width: 70px;">
+            <label style="font-size: 0.85rem; font-weight: 600; color: #92400e;">Unités</label>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="number" id="renfNbrGPF" min="0" value="0" style="width: 70px;">
+            <label style="font-size: 0.85rem; font-weight: 600; color: #92400e;">GPF</label>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+          <input type="number" id="renfNbrVPE" min="0" value="0" style="width: 70px;">
+          <label style="font-size: 0.85rem; font-weight: 600; color: #92400e;">VPE</label>
+        </div>
+
+        <input type="text" id="renfPompiersTexteLibre" placeholder="Moyens Pompiers (texte libre / précisions...)" style="width: 100%;">
+      </div>
+
+      <!-- Autres Services & Gestionnaires -->
+      <div class="urban-section-title" style="background:#fef3c7; border-left-color:#d97706; color:#92400e;">🏛️ Autres Services &amp; Gestionnaires</div>
+      <div class="sub-panel" style="margin-bottom: 10px;">
+        <div class="checkbox-grid" style="margin-bottom: 8px;">
+          <label class="checkbox-label"><input type="checkbox" class="renfServiceCheck" value="Forces de l'ordre"> Forces de l'ordre</label>
+          <label class="checkbox-label"><input type="checkbox" class="renfServiceCheck" value="Aut. Com. (Mairie/Élus)"> Aut. Com. (Mairie/Élus)</label>
+          <label class="checkbox-label"><input type="checkbox" class="renfServiceCheck" value="Gest. Elec. (Enedis...)"> Gest. Elec. (Enedis...)</label>
+          <label class="checkbox-label"><input type="checkbox" class="renfServiceCheck" value="Gest. Gaz (GRDF...)"> Gest. Gaz (GRDF...)</label>
+          <label class="checkbox-label"><input type="checkbox" class="renfServiceCheck" value="Gest. Eau"> Gest. Eau</label>
+          <label class="checkbox-label"><input type="checkbox" class="renfServiceCheck" value="Gest. Assain."> Gest. Assain.</label>
+          <label class="checkbox-label"><input type="checkbox" class="renfServiceCheck" value="Gest. Routier (DIR/Conseil Dpt)"> Gest. Routier (DIR/Conseil Dpt)</label>
+          <label class="checkbox-label"><input type="checkbox" class="renfServiceCheck" value="Resp. Ets. (Responsable Établissement)"> Resp. Ets. (Responsable Établissement)</label>
+        </div>
+        <input type="text" id="renfServiceAutreTxt" placeholder="Autre (texte libre)..." style="width: 100%;">
+      </div>
+
+      <div class="numbering-box">
+        <label class="checkbox-label">
+          <input type="checkbox" id="renfNumCheck" checked>
+          🔢 Numéroter ce message dans la liste
+        </label>
+      </div>
+
+      <button id="saveUrbanRenfortBtn" class="btn-warning" style="width: 100%; padding: 12px; margin-top: 5px; background: #d97706; color: white; border: none; border-radius: 6px; font-weight: 700; cursor: pointer;">💾 Valider Demande de Renfort</button>
+    </div>
+  </div>
+
+  <!-- VUE : TABLEAU VICTIMES EXHAUSTIF -->
+  <div id="urbanVictimsView" class="card hidden">
+    <button class="btn-primary backToUrbanMenuBtn" style="margin-bottom: 15px;">⬅️ Retour aux messages urbains</button>
+    <h2>🏥 Bilan & Tableau Victime(s)</h2>
+
+    <div style="background: #fef2f2; padding: 15px; border-radius: 8px; border: 1px solid #fee2e2; margin-bottom: 15px;">
+      <div id="victimsSynthTitle" class="urban-section-title" style="background:#fee2e2; border-left-color:#ef4444; color:#991b1b; margin-top:0;">SYNTHESE : (0) Concernés</div>
+      <table class="ops-table">
+        <thead>
+          <tr>
+            <th style="background:#fee2e2; text-align:center;" colspan="4">Victime(s)</th>
+            <th style="background:#e2e8f0; text-align:center;">Non Victime(s)</th>
+          </tr>
+          <tr>
+            <th>Impliqués</th><th>UA</th><th>UR</th><th>DCD</th><th>Impliqués sains</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="number" id="sumVicImpliques" min="0" placeholder="0" oninput="updateVictimsSynthesisTitle()"></td>
+            <td><input type="number" id="sumVicUA" min="0" placeholder="0" oninput="updateVictimsSynthesisTitle()"></td>
+            <td><input type="number" id="sumVicUR" min="0" placeholder="0" oninput="updateVictimsSynthesisTitle()"></td>
+            <td><input type="number" id="sumVicDCD" min="0" placeholder="0" oninput="updateVictimsSynthesisTitle()"></td>
+            <td><input type="number" id="sumNonVicSains" min="0" placeholder="0" oninput="updateVictimsSynthesisTitle()"></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="urban-section-title" style="background:#fee2e2; border-left-color:#ef4444; color:#991b1b; margin-top: 15px;">📋 Détail individuel Victime(s)</div>
+      <table class="ops-table" id="victimsTable">
+        <thead>
+          <tr><th>Véhicule</th><th>Sexe/Âge</th><th>Gravité</th><th>Destination CH / Transport</th><th>Par</th><th>Action</th></tr>
+        </thead>
+        <tbody id="victimsTableBody"></tbody>
+      </table>
+      <button class="btn-secondary" onclick="addVictimRow()" style="font-size:0.75rem; margin-bottom:10px;">➕ Ajouter une victime</button>
+      
+      <input type="text" id="urbPrvEmplacement" placeholder="Emplacement PRV (Point Rassemblement Victimes)..." style="margin-bottom: 10px;">
+
+      <div class="numbering-box">
+        <label class="checkbox-label">
+          <input type="checkbox" id="victimsNumCheck" checked>
+          🔢 Numéroter ce message dans la liste
+        </label>
+      </div>
+
+      <button id="saveUrbanVictimBtn" class="btn-danger" style="width:100%; padding:12px; margin-top:5px;">💾 Valider Bilan Victimes</button>
+    </div>
+  </div>
+
+  <!-- MENU DÉDIÉ : MESSAGES FORÊT -->
+  <div id="forestMenuView" class="card hidden">
+    <button class="btn-primary backToMainBtn" style="margin-bottom: 15px;">⬅️ Retour à l'accueil</button>
+    <h2>🌲 Messages de Chronologie Forêt</h2>
+    <div class="forest-nav-grid">
+      <button id="navT0Btn" class="btn-forest" style="padding: 15px; font-size: 0.9rem;">🚨 T0 min<br><small>Arrivée SLLX</small></button>
+      <button id="navT3Btn" class="btn-forest" style="padding: 15px; font-size: 0.9rem;">🌲 T+3 à 5 min<br><small>Ambiance</small></button>
+      <button id="navT20Btn" class="btn-forest" style="padding: 15px; font-size: 0.9rem;">🔥 T+20 à 30 min<br><small>Situation</small></button>
+      <button id="navTEteintBtn" class="btn-forest" style="padding: 15px; font-size: 0.9rem;">✅ Feu Éteint<br><small>Bilan</small></button>
+    </div>
+  </div>
+
+  <!-- PAGES FORÊT DÉTAILLÉES -->
+  <div id="forestT0View" class="card hidden">
+    <button class="btn-primary backToForestMenuBtn" style="margin-bottom: 15px;">⬅️ Retour aux messages forêt</button>
+    <h2>🚨 Message Arrivée SLLX (T0 min)</h2>
+    <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border: 1px solid #bbf7d0; margin-bottom: 15px;">
+      <div class="form-row">
+        <div class="form-group"><label for="forestCommune">Commune sinistrée :</label><input type="text" id="forestCommune" placeholder="ex: Castillon"></div>
+        <div class="form-group"><label for="forestLieuDit">Lieu-dit (25 000ème) :</label><input type="text" id="forestLieuDit" placeholder="ex: Les Versennes"></div>
+      </div>
+      <div class="form-group">
+        <label>Feu de :</label>
+        <div class="checkbox-grid">
+          <label class="checkbox-label"><input type="checkbox" class="vegCheck" value="Broussailles"> Broussailles</label>
+          <label class="checkbox-label"><input type="checkbox" class="vegCheck" value="Landes"> Landes</label>
+          <label class="checkbox-label"><input type="checkbox" class="vegCheck" value="Taillis - Feuillus"> Taillis - Feuillus</label>
+          <label class="checkbox-label"><input type="checkbox" class="vegCheck" value="Pins d'âges divers"> Pins d'âges divers</label>
+          <label class="checkbox-label"><input type="checkbox" class="vegCheck" value="Marais"> Marais</label>
+          <label class="checkbox-label"><input type="checkbox" class="vegCheck" value="Pins de - 20 ans"> Pins de - 20 ans</label>
+          <label class="checkbox-label"><input type="checkbox" class="vegCheck" value="Prairie / Bord de route"> Prairie / Bord de route</label>
+          <label class="checkbox-label"><input type="checkbox" class="vegCheck" value="Pins de 20 à 40 ans"> Pins de 20 à 40 ans</label>
+          <label class="checkbox-label"><input type="checkbox" class="vegCheck" value="Espace agricole"> Espace agricole</label>
+          <label class="checkbox-label"><input type="checkbox" class="vegCheck" value="Pins de + 40 ans"> Pins de + 40 ans</label>
+        </div>
+      </div>
+      <div class="numbering-box"><label class="checkbox-label"><input type="checkbox" id="t0NumCheck" checked> 🔢 Numéroter ce message</label></div>
+      <button id="saveT0MsgBtn" class="btn-forest" style="width:100%; padding:12px;">💾 Valider T0 SLLX</button>
+    </div>
+  </div>
+
+  <div id="forestT3View" class="card hidden">
+    <button class="btn-primary backToForestMenuBtn" style="margin-bottom: 15px;">⬅️ Retour aux messages forêt</button>
+    <h2>🌲 Message de Reconnaissance (Ambiance) - T+3 à 5 min</h2>
+    <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border: 1px solid #bbf7d0; margin-bottom: 15px;">
+      <div class="form-group"><label for="t3FeuDe">Feu de (végétation) :</label><input type="text" id="t3FeuDe" placeholder="ex: Sous-bois de pins"></div>
+      <div class="form-row">
+        <div class="form-group"><label for="t3Superficie">Superficie détruite :</label><input type="text" id="t3Superficie" placeholder="ex: 1500 m²"></div>
+        <div class="form-group"><label for="t3FrontFeu">Front de feu :</label><input type="text" id="t3FrontFeu" placeholder="ex: 100 mètres"></div>
+      </div>
+      <div class="form-group">
+        <label>Situation :</label>
+        <div class="radio-group">
+          <label class="checkbox-label"><input type="radio" name="t3Situation" value="Favorable"> Favorable</label>
+          <label class="checkbox-label"><input type="radio" name="t3Situation" value="Défavorable"> Défavorable</label>
+          <label class="checkbox-label"><input type="radio" name="t3Situation" value="Très défavorable"> Très défavorable</label>
+        </div>
+      </div>
+      <div class="form-group"><label for="t3SurfaceMenacee">Surface menacée :</label><input type="text" id="t3SurfaceMenacee" placeholder="ex: 10 Hectares"></div>
+      <div class="form-group">
+        <label>Difficultés particulières :</label>
+        <div class="sub-panel">
+          <div class="checkbox-grid" style="border:none; padding:0; margin-bottom:8px;">
+            <label class="checkbox-label"><input type="checkbox" class="t3DiffCheck" value="Terrain inaccessible"> Terrain inaccessible</label>
+            <label class="checkbox-label"><input type="checkbox" class="t3DiffCheck" value="Fossés"> Fossés</label>
+            <label class="checkbox-label"><input type="checkbox" class="t3DiffCheck" value="Chablis"> Chablis</label>
+            <label class="checkbox-label"><input type="checkbox" class="t3DiffCheck" value="Points sensibles à défendre"> Points sensibles à défendre</label>
+          </div>
+          <input type="text" id="t3DiffTexte" placeholder="Précision difficultés...">
+        </div>
+      </div>
+      <div class="form-group"><label for="t3MoyensSLLX">Moyens sur les lieux :</label><input type="text" id="t3MoyensSLLX" placeholder="ex: CCFM Castillon"></div>
+      <div class="form-group">
+        <label>Secours ou demande de renforts :</label>
+        <div class="sub-panel">
+          <label class="checkbox-label" style="margin-bottom: 8px;"><input type="checkbox" id="t3SecoursSuffisantsCheck"> Secours suffisants</label>
+          <div style="font-size:0.8rem; font-weight:bold; color:#475569; margin-bottom:4px;">Demande de renforts :</div>
+          <div class="form-row" style="margin-bottom:6px;">
+            <div class="form-group"><input type="number" id="t3NumUnit" min="0" placeholder="0"> <label style="font-size:0.75rem;">Unités</label></div>
+            <div class="form-group"><input type="number" id="t3NumGPF" min="0" placeholder="0"> <label style="font-size:0.75rem;">GPF</label></div>
+          </div>
+          <div class="form-row" style="margin-bottom:6px;">
+            <div class="form-group"><input type="number" id="t3NumABE" min="0" placeholder="0"> <label style="font-size:0.75rem;">ABE</label></div>
+            <div class="form-group"><input type="number" id="t3NumHBE" min="0" placeholder="0"> <label style="font-size:0.75rem;">HBE</label></div>
+          </div>
+          <input type="text" id="t3RenfortTexte" placeholder="Texte libre renforts..." style="margin-top:6px;">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Autorités ou services :</label>
+        <div class="sub-panel">
+          <div class="checkbox-grid" style="border:none; padding:0; margin-bottom:8px;">
+            <label class="checkbox-label"><input type="checkbox" class="t3AuthCheck" value="Élus / Conseiller Tech DFCI"> Élus / Tech DFCI</label>
+            <label class="checkbox-label"><input type="checkbox" class="t3AuthCheck" value="Police ou Gendarmerie"> Police / Gendarmerie</label>
+            <label class="checkbox-label"><input type="checkbox" class="t3AuthCheck" value="Énergie"> Énergie</label>
+            <label class="checkbox-label"><input type="checkbox" class="t3AuthCheck" value="CIL"> CIL</label>
+          </div>
+          <input type="text" id="t3AuthTexte" placeholder="Précision autorités...">
+        </div>
+      </div>
+      <div class="form-group"><label for="t3PointEngagement">Point d'engagement :</label><input type="text" id="t3PointEngagement" placeholder="ex: Piste DFCI n°3"></div>
+      <div class="form-group">
+        <label>Activation du point d'eau :</label>
+        <div class="sub-panel">
+          <div class="form-row" style="margin-bottom:8px;">
+            <div><label style="font-size:0.8rem; font-weight:bold;">N° PEI :</label><input type="text" id="t3PeiNum" placeholder="ex: 12"></div>
+            <div><label style="font-size:0.8rem; font-weight:bold;">Coord. (5 max) :</label><input type="text" id="t3PeiCoord" maxlength="5" placeholder="AB123"></div>
+          </div>
+          <div style="font-size:0.8rem; font-weight:bold; color:#475569; margin-bottom:4px;">Moyens :</div>
+          <div class="radio-group" style="padding:4px 8px; margin-bottom:6px;">
+            <label class="checkbox-label"><input type="checkbox" class="t3MoyenWaterCheck" value="MPRGP"> MPRGP</label>
+            <label class="checkbox-label"><input type="checkbox" class="t3MoyenWaterCheck" value="MPRI"> MPRI</label>
+            <label class="checkbox-label"><input type="checkbox" class="t3MoyenWaterCheck" id="t3MoyenAutreCheck" value="Autre" onchange="document.getElementById('t3MoyenAutreTexte').classList.toggle('hidden', !this.checked)"> Autre</label>
+          </div>
+          <input type="text" id="t3MoyenAutreTexte" class="hidden" placeholder="Précisez l'autre moyen point d'eau...">
+        </div>
+      </div>
+      <div class="numbering-box"><label class="checkbox-label"><input type="checkbox" id="t3NumCheck" checked> 🔢 Numéroter</label></div>
+      <button id="saveT3MsgBtn" class="btn-forest" style="width:100%; padding:12px;">💾 Valider T+3 Ambiance</button>
+    </div>
+  </div>
+
+  <div id="forestT20View" class="card hidden">
+    <button class="btn-primary backToForestMenuBtn" style="margin-bottom: 15px;">⬅️ Retour aux messages forêt</button>
+    <h2>🔥 Message de Compte Rendu (T+20 à 30 min)</h2>
+    <div style="background: #fff7ed; padding: 15px; border-radius: 8px; border: 1px solid #fed7aa; margin-bottom: 15px;">
+      <div class="form-group">
+        <label>Phase de lutte :</label>
+        <div class="radio-group">
+          <label class="checkbox-label"><input type="radio" name="t20PhaseLutte" value="Feu fixé"> Feu fixé</label>
+          <label class="checkbox-label"><input type="radio" name="t20PhaseLutte" value="Feu maîtrisé"> Feu maîtrisé</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Évolution de la situation :</label>
+        <div class="radio-group">
+          <label class="checkbox-label"><input type="radio" name="t20EvolSituation" value="Favorable"> Favorable</label>
+          <label class="checkbox-label"><input type="radio" name="t20EvolSituation" value="Défavorable"> Défavorable</label>
+          <label class="checkbox-label"><input type="radio" name="t20EvolSituation" value="Très défavorable"> Très défavorable</label>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label for="t20Superficie">Superficie détruite :</label><input type="text" id="t20Superficie" placeholder="ex: 2 Hectares"></div>
+        <div class="form-group"><label for="t20FrontFeu">Front de feu :</label><input type="text" id="t20FrontFeu" placeholder="ex: 200 mètres"></div>
+      </div>
+      <div class="form-group">
+        <label>Difficultés particulières :</label>
+        <div class="sub-panel">
+          <div class="checkbox-grid" style="border:none; padding:0; margin-bottom:8px;">
+            <label class="checkbox-label"><input type="checkbox" class="t20DiffCheck" value="Terrain inaccessible"> Terrain inaccessible</label>
+            <label class="checkbox-label"><input type="checkbox" class="t20DiffCheck" value="Fossés"> Fossés</label>
+            <label class="checkbox-label"><input type="checkbox" class="t20DiffCheck" value="Chablis"> Chablis</label>
+            <label class="checkbox-label"><input type="checkbox" class="t20DiffCheck" value="Points sensibles à défendre"> Points sensibles à défendre</label>
+          </div>
+          <input type="text" id="t20DiffTexte" placeholder="Précision difficultés...">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Si S &lt; 1m², requalifier en :</label>
+        <div class="checkbox-grid">
+          <label class="checkbox-label"><input type="checkbox" class="t20RequalCheck" value="Reconnaissance de fumée"> Reconnaissance fumée</label>
+          <label class="checkbox-label"><input type="checkbox" class="t20RequalCheck" value="Reconnaissance feu d'orage"> Feu d'orage</label>
+          <label class="checkbox-label"><input type="checkbox" class="t20RequalCheck" value="Feu ayant existé"> Feu ayant existé</label>
+          <label class="checkbox-label"><input type="checkbox" class="t20RequalCheck" value="Traitement des fumerons"> Fumerons</label>
+          <label class="checkbox-label"><input type="checkbox" class="t20RequalCheck" value="Feu de véhicule"> Feu de véhicule</label>
+          <label class="checkbox-label"><input type="checkbox" class="t20RequalCheck" value="Feu de détritus"> Feu de détritus</label>
+        </div>
+      </div>
+      <div class="form-group"><label for="t20TexteLibre">Actions en cours / Détails :</label><textarea id="t20TexteLibre" placeholder="Détails des actions..."></textarea></div>
+      <div class="form-group"><label for="t20MoyensSLLX">Moyens sur les lieux :</label><input type="text" id="t20MoyensSLLX" placeholder="ex: GIFF 1"></div>
+      <div class="form-group">
+        <label>Secours ou demande de renforts :</label>
+        <div class="sub-panel">
+          <label class="checkbox-label" style="margin-bottom: 8px;"><input type="checkbox" id="t20SecoursSuffisantsCheck"> Secours suffisants</label>
+          <div style="font-size:0.8rem; font-weight:bold; color:#475569; margin-bottom:4px;">Renforts :</div>
+          <div class="form-row" style="margin-bottom:6px;">
+            <div class="form-group"><input type="number" id="t20NumUnit" min="0" placeholder="0"> <label style="font-size:0.75rem;">Unités</label></div>
+            <div class="form-group"><input type="number" id="t20NumGPF" min="0" placeholder="0"> <label style="font-size:0.75rem;">GPF</label></div>
+          </div>
+          <div class="form-row" style="margin-bottom:6px;">
+            <div class="form-group"><input type="number" id="t20NumABE" min="0" placeholder="0"> <label style="font-size:0.75rem;">ABE</label></div>
+            <div class="form-group"><input type="number" id="t20NumHBE" min="0" placeholder="0"> <label style="font-size:0.75rem;">HBE</label></div>
+          </div>
+          <input type="text" id="t20RenfortTexte" placeholder="Texte libre renforts..." style="margin-top:6px;">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Autorités ou services présents :</label>
+        <div class="sub-panel">
+          <div class="checkbox-grid" style="border:none; padding:0; margin-bottom:8px;">
+            <label class="checkbox-label"><input type="checkbox" class="t20AuthCheck" value="Élus / Conseiller Tech DFCI"> Élus / Tech DFCI</label>
+            <label class="checkbox-label"><input type="checkbox" class="t20AuthCheck" value="Police ou Gendarmerie"> Police / Gendarmerie</label>
+            <label class="checkbox-label"><input type="checkbox" class="t20AuthCheck" value="Énergie"> Énergie</label>
+            <label class="checkbox-label"><input type="checkbox" class="t20AuthCheck" value="CIL"> CIL</label>
+          </div>
+          <input type="text" id="t20AuthTexte" placeholder="Précision autorités...">
+        </div>
+      </div>
+      <div class="numbering-box"><label class="checkbox-label"><input type="checkbox" id="t20NumCheck" checked> 🔢 Numéroter</label></div>
+      <button id="saveT20MsgBtn" class="btn-forest" style="width:100%; padding:12px;">💾 Valider CR T+20</button>
+    </div>
+  </div>
+
+  <div id="forestTEteintView" class="card hidden">
+    <button class="btn-primary backToForestMenuBtn" style="margin-bottom: 15px;">⬅️ Retour aux messages forêt</button>
+    <h2>✅ Message de Feu Éteint (&gt; 1 m²)</h2>
+    <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border: 1px solid #bbf7d0; margin-bottom: 15px;">
+      <div class="form-row-3">
+        <div class="form-group"><label for="eteintCommune">Commune :</label><input type="text" id="eteintCommune" placeholder="Commune"></div>
+        <div class="form-group"><label for="eteintLieuDit">Lieu-dit :</label><input type="text" id="eteintLieuDit" placeholder="Lieu-dit"></div>
+        <div class="form-group"><label for="eteintCoords">Coordonnées :</label><input type="text" id="eteintCoords" placeholder="Coords"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label for="eteintSuperficie">Superficie détruite :</label><input type="text" id="eteintSuperficie" placeholder="ex: 3,5 Ha"></div>
+        <div class="form-group"><label for="eteintVegetation">Type végétation :</label><input type="text" id="eteintVegetation" placeholder="ex: Pins 20-40 ans"></div>
+      </div>
+      <div class="form-group">
+        <label>Certitude de la cause :</label>
+        <div class="radio-group">
+          <label class="checkbox-label"><input type="radio" name="eteintCauseCert" value="Probable"> Probable</label>
+          <label class="checkbox-label"><input type="radio" name="eteintCauseCert" value="Certaine"> Certaine</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Cause principale :</label>
+        <select id="eteintCauseSelect" onchange="updateEteintOrigines()">
+          <option value="Inconnue">Inconnue</option>
+          <option value="Naturelle">Naturelle</option>
+          <option value="Accidentelle">Accidentelle</option>
+          <option value="Malveillance">Malveillance</option>
+          <option value="Involontaire travaux">Involontaire travaux</option>
+          <option value="Involontaire particuliers">Involontaire particuliers</option>
+        </select>
+      </div>
+      <div id="eteintOriginePanel" class="form-group hidden">
+        <label>Origine :</label>
+        <div id="eteintOrigineContainer" class="checkbox-grid"></div>
+        <input type="text" id="eteintOrigineAutreTxt" placeholder="Précisez l'origine (Autre)..." class="hidden" style="margin-top:6px;">
+      </div>
+      <div class="form-row-3" style="margin-top:10px;">
+        <div class="form-group"><label for="eteintDecedes">Décédés :</label><input type="number" id="eteintDecedes" min="0" value="0"></div>
+        <div class="form-group"><label for="eteintBatDetruits">Bat. détruits :</label><input type="number" id="eteintBatDetruits" min="0" value="0"></div>
+        <div class="form-group"><label for="eteintBatPartiel">Bat. partiels :</label><input type="number" id="eteintBatPartiel" min="0" value="0"></div>
+      </div>
+      <div class="form-group">
+        <label>Surveillance assurée par :</label>
+        <div class="radio-group">
+          <label class="checkbox-label"><input type="radio" name="eteintSurveillance" value="ASA DFCI"> ASA DFCI</label>
+          <label class="checkbox-label"><input type="radio" name="eteintSurveillance" value="Propriétaire"> Propriétaire</label>
+          <label class="checkbox-label"><input type="radio" name="eteintSurveillance" value="Autre"> Autre</label>
+        </div>
+      </div>
+      <div class="numbering-box"><label class="checkbox-label"><input type="checkbox" id="eteintNumCheck" checked> 🔢 Numéroter</label></div>
+      <button id="saveTEteintMsgBtn" class="btn-forest" style="width:100%; padding:12px;">💾 Valider Feu Éteint</button>
+    </div>
+  </div>
+
+  <!-- VUE : MÉTHODE SOAM -->
+  <div id="soamView" class="card hidden">
+    <button class="btn-primary backToMainBtn" style="margin-bottom: 15px;">⬅️ Retour à l'accueil</button>
+    <h2>🎯 Raisonnement SOAM</h2>
+    <div style="background: #f5f3ff; padding: 15px; border-radius: 12px; border: 1px solid #ddd6fe;">
+      <div class="form-group">
+        <label for="soamSituation" style="color: #6d28d9; font-size:1rem;"><strong>S</strong> - Situation :</label>
+        <textarea id="soamSituation" placeholder="Définissez la situation actuelle..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <label style="color: #6d28d9; font-size:1rem; margin:0;"><strong>O</strong> - Objectif(s) &amp; <strong>A</strong> - Action(s) :</label>
+          <button id="addObjectiveBtn" class="btn-purple" style="font-size:0.8rem; padding:6px 10px;">➕ Ajouter un Objectif</button>
+        </div>
+        <div id="objectivesContainer"></div>
+      </div>
+
+      <div style="background: #ffffff; padding: 12px; border-radius: 10px; border: 1px solid #c4b5fd; text-align: center; margin-top: 15px;">
+        <span style="font-weight: 800; color: #5b21b6; font-size: 1.05rem;">
+          🧮 <strong>M</strong> - Total Moyens Humains : <span id="soamTotalAgents">0</span> Agent(s) requis
+        </span>
+      </div>
+
+      <div class="numbering-box">
+        <label class="checkbox-label">
+          <input type="checkbox" id="soamNumCheck" checked>
+          🔢 Numéroter ce message dans la liste
+        </label>
+      </div>
+
+      <button id="saveSoamBtn" class="btn-purple" style="width:100%; padding:12px; margin-top:10px;">💾 Valider le bilan SOAM</button>
+    </div>
+  </div>
+
+  <!-- VUE MOYENS SOL -->
+  <div id="resourcesView" class="card hidden">
+    <button class="btn-primary backToMainBtn" style="margin-bottom: 15px;">⬅️ Retour à l'accueil</button>
+    <h2>🚒 Moyens au sol</h2>
+    <div class="form-row-3">
+      <select id="enginSelect"></select>
+      <select id="orderSelect"><option value="">(Ordre)</option><option value="01">01</option><option value="02">02</option></select>
+      <select id="centerSelect"></select>
+    </div>
+    <button id="addResourceBtn" class="btn-success" style="margin-top:8px; width:100%;">➕ Ajouter un moyen</button>
+    <div class="scroll-container" style="margin-top:15px;"><div id="resourcesGrid" class="resources-grid"></div></div>
+    
+    <div class="list-editor-grid">
+      <div>
+        <label style="font-size:0.8rem; font-weight:700;">Ajouter un type d'engin :</label>
+        <input type="text" id="newEnginInput" placeholder="ex: VTU" style="margin-top:4px;">
+        <button id="addEnginBtn" class="btn-primary" style="margin-top:4px; width:100%;">Ajouter Engin</button>
+        <div id="enginsTags" class="tags-container"></div>
+      </div>
+      <div>
+        <label style="font-size:0.8rem; font-weight:700;">Ajouter un centre :</label>
+        <input type="text" id="newCenterInput" placeholder="ex: Bordeaux" style="margin-top:4px;">
+        <button id="addCenterBtn" class="btn-primary" style="margin-top:4px; width:100%;">Ajouter Centre</button>
+        <div id="centersTags" class="tags-container"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VUE MOYENS AÉRIENS (INTÉGRÉE ET ENRICHIE) -->
+  <div id="airResourcesView" class="card hidden">
+    <button class="btn-primary backToMainBtn" style="margin-bottom: 15px;">⬅️ Retour à l'accueil</button>
+    <h2>🚁 Moyens aériens engagés</h2>
+
+    <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; border: 1px solid #bae6fd; margin-bottom: 20px;">
+      <div class="form-row-3">
+        <div class="form-group"><label for="airTypeSelect">Type :</label><select id="airTypeSelect"></select></div>
+        <div class="form-group"><label for="airCallsignSelect">Indicatif :</label><select id="airCallsignSelect"></select></div>
+        <div class="form-group"><label for="airNumberInput">N° :</label><input type="text" id="airNumberInput" placeholder="ex: 33"></div>
+      </div>
+      <button id="addAirResourceBtn" class="btn-sky" style="width: 100%; padding: 10px;">➕ Enregistrer l'appareil</button>
+    </div>
+
+    <h3>Aéronefs enregistrés</h3>
+    <div class="scroll-container"><div id="airResourcesGrid" class="resources-grid"></div></div>
+
+    <hr style="margin: 25px 0; border: 0; border-top: 1px solid #e2e8f0;">
+    <h3>⚙️ Gérer les listes Aériennes</h3>
+    <div class="list-editor-grid">
+      <div>
+        <label style="font-weight:600; font-size:0.85rem;">Ajouter un Type :</label>
+        <div style="display:flex; gap:5px; margin-top:4px;">
+          <input type="text" id="newAirTypeInput" placeholder="ex: Canadair">
+          <button id="addAirTypeBtn" class="btn-sky">+</button>
+        </div>
+        <div id="airTypesTags" class="tags-container"></div>
+      </div>
+      <div>
+        <label style="font-weight:600; font-size:0.85rem;">Ajouter un Indicatif :</label>
+        <div style="display:flex; gap:5px; margin-top:4px;">
+          <input type="text" id="newAirCallsignInput" placeholder="ex: Pélican">
+          <button id="addAirCallsignBtn" class="btn-sky">+</button>
+        </div>
+        <div id="airCallsignsTags" class="tags-container"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VUE DÉTAILLÉE DU MESSAGE -->
+  <div id="detailView" class="card hidden">
+    <button id="backBtn" class="btn-primary">⬅️ Retour à l'accueil</button>
+    <div style="margin-top: 20px;">
+      <div class="memo-header"><span id="detailBadge"></span><span id="detailDate" class="memo-date"></span></div>
+      <div id="detailContent" class="detail-text"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
