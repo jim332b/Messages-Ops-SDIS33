@@ -379,25 +379,31 @@ document.querySelectorAll('.backToUrbanMenuBtn').forEach(btn => btn.addEventList
   if(urbanMenuView) urbanMenuView.classList.remove('hidden');
 }));
 
-// NAVIGATION SOUS-MENUS URBAINS
-document.getElementById('navMessageLibreUrbainBtn')?.addEventListener('click', () => {
-  urbanMenuView.classList.add('hidden');
-  urbanMessageLibreView.classList.remove('hidden');
-});
+// NAVIGATION SOUS-MENUS URBAINS (SÉCURISÉE)
+const navMsgLibreBtn = document.getElementById('navMessageLibreUrbainBtn');
+if (navMsgLibreBtn) {
+  navMsgLibreBtn.addEventListener('click', () => {
+    if(urbanMenuView) urbanMenuView.classList.add('hidden');
+    if(urbanMessageLibreView) urbanMessageLibreView.classList.remove('hidden');
+  });
+}
 
-document.getElementById('navAmbianceUrbaineBtn')?.addEventListener('click', () => {
-  urbanMenuView.classList.add('hidden');
-  urbanAmbianceView.classList.remove('hidden');
-});
+const navAmbianceBtn = document.getElementById('navAmbianceUrbaineBtn');
+if (navAmbianceBtn) {
+  navAmbianceBtn.addEventListener('click', () => {
+    if(urbanMenuView) urbanMenuView.classList.add('hidden');
+    if(urbanAmbianceView) urbanAmbianceView.classList.remove('hidden');
+  });
+}
 
-document.getElementById('navSapBtn').addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanSapView.classList.remove('hidden'); });
-document.getElementById('navFeuUrbainBtn').addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanFeuView.classList.remove('hidden'); });
-document.getElementById('navSecoursRoutierBtn').addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanSRView.classList.remove('hidden'); });
-document.getElementById('navFuiteGazBtn').addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanGazView.classList.remove('hidden'); });
-document.getElementById('navOpeDivBtn').addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanOpeDivView.classList.remove('hidden'); });
-document.getElementById('navOpeNautBtn').addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanNautView.classList.remove('hidden'); });
-document.getElementById('navDemandeRenfortBtn').addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanRenfortView.classList.remove('hidden'); });
-document.getElementById('navTableauVictimesBtn').addEventListener('click', () => { 
+document.getElementById('navSapBtn')?.addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanSapView.classList.remove('hidden'); });
+document.getElementById('navFeuUrbainBtn')?.addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanFeuView.classList.remove('hidden'); });
+document.getElementById('navSecoursRoutierBtn')?.addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanSRView.classList.remove('hidden'); });
+document.getElementById('navFuiteGazBtn')?.addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanGazView.classList.remove('hidden'); });
+document.getElementById('navOpeDivBtn')?.addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanOpeDivView.classList.remove('hidden'); });
+document.getElementById('navOpeNautBtn')?.addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanNautView.classList.remove('hidden'); });
+document.getElementById('navDemandeRenfortBtn')?.addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanRenfortView.classList.remove('hidden'); });
+document.getElementById('navTableauVictimesBtn')?.addEventListener('click', () => { 
   const saveVicBtn = document.getElementById('saveUrbanVictimBtn');
   if(saveVicBtn) {
     saveVicBtn.removeAttribute('data-editing-index');
