@@ -360,7 +360,7 @@ document.querySelectorAll('.backToMainBtn').forEach(btn => btn.addEventListener(
     saveVicBtn.removeAttribute('data-editing-index');
     saveVicBtn.textContent = "💾 Valider Bilan Victimes";
   }
-  [urbanMenuView, urbanSapView, urbanFeuView, urbanSRView, urbanGazView, urbanOpeDivView, urbanNautView, urbanRenfortView, urbanVictimsView, forestMenuView, forestT0View, forestT3View, forestT20View, forestTEteintView, soamView, resourcesView, airResourcesView, detailView].forEach(c => { if(c) c.classList.add('hidden'); });
+  [urbanMenuView, urbanMessageLibreView, urbanAmbianceView, urbanSapView, urbanFeuView, urbanSRView, urbanGazView, urbanOpeDivView, urbanNautView, urbanRenfortView, urbanVictimsView, forestMenuView, forestT0View, forestT3View, forestT20View, forestTEteintView, soamView, resourcesView, airResourcesView, detailView].forEach(c => { if(c) c.classList.add('hidden'); });
   if(mainView) mainView.classList.remove('hidden');
 }));
 
@@ -375,11 +375,21 @@ document.querySelectorAll('.backToUrbanMenuBtn').forEach(btn => btn.addEventList
     saveVicBtn.removeAttribute('data-editing-index');
     saveVicBtn.textContent = "💾 Valider Bilan Victimes";
   }
-  [urbanSapView, urbanFeuView, urbanSRView, urbanGazView, urbanOpeDivView, urbanNautView, urbanRenfortView, urbanVictimsView].forEach(c => { if(c) c.classList.add('hidden'); });
+  [urbanMessageLibreView, urbanAmbianceView, urbanSapView, urbanFeuView, urbanSRView, urbanGazView, urbanOpeDivView, urbanNautView, urbanRenfortView, urbanVictimsView].forEach(c => { if(c) c.classList.add('hidden'); });
   if(urbanMenuView) urbanMenuView.classList.remove('hidden');
 }));
 
 // NAVIGATION SOUS-MENUS URBAINS
+document.getElementById('navMessageLibreUrbainBtn')?.addEventListener('click', () => {
+  urbanMenuView.classList.add('hidden');
+  urbanMessageLibreView.classList.remove('hidden');
+});
+
+document.getElementById('navAmbianceUrbaineBtn')?.addEventListener('click', () => {
+  urbanMenuView.classList.add('hidden');
+  urbanAmbianceView.classList.remove('hidden');
+});
+
 document.getElementById('navSapBtn').addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanSapView.classList.remove('hidden'); });
 document.getElementById('navFeuUrbainBtn').addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanFeuView.classList.remove('hidden'); });
 document.getElementById('navSecoursRoutierBtn').addEventListener('click', () => { urbanMenuView.classList.add('hidden'); urbanSRView.classList.remove('hidden'); });
@@ -515,7 +525,7 @@ window.editVictimMemo = function(index) {
     saveVicBtn.textContent = "💾 Mettre à jour le Bilan Victimes";
   }
 
-  [mainView, urbanMenuView, urbanSapView, urbanFeuView, urbanSRView, urbanGazView, urbanOpeDivView, urbanNautView, urbanRenfortView, urbanVictimsView, forestMenuView, forestT0View, forestT3View, forestT20View, forestTEteintView, soamView, resourcesView, airResourcesView, detailView].forEach(v => { if(v) v.classList.add('hidden'); });
+  [mainView, urbanMenuView, urbanMessageLibreView, urbanAmbianceView, urbanSapView, urbanFeuView, urbanSRView, urbanGazView, urbanOpeDivView, urbanNautView, urbanRenfortView, urbanVictimsView, forestMenuView, forestT0View, forestT3View, forestT20View, forestTEteintView, soamView, resourcesView, airResourcesView, detailView].forEach(v => { if(v) v.classList.add('hidden'); });
   if(urbanVictimsView) urbanVictimsView.classList.remove('hidden');
 };
 
@@ -537,6 +547,20 @@ function openMemo(index) {
 
 document.getElementById('backBtn').addEventListener('click', () => { detailView.classList.add('hidden'); mainView.classList.remove('hidden'); });
 
+// Sauvegarde Message Libre Urbain
+document.getElementById('saveUrbanFreeBtn')?.addEventListener('click', () => {
+  const txt = document.getElementById('urbanFreeTextarea').value.trim();
+  const customTag = document.getElementById('urbanFreeTagInput').value.trim() || 'Message Libre';
+  const isNumbered = document.getElementById('urbanFreeNumCheck').checked;
+  if (txt) { 
+    saveMemoToStorage(txt, customTag, !isNumbered, true, 'memo-badge-urban'); 
+    document.getElementById('urbanFreeTextarea').value = ''; 
+    document.getElementById('urbanFreeTagInput').value = '';
+    urbanMessageLibreView.classList.add('hidden');
+    urbanMenuView.classList.remove('hidden');
+  } else { alert("Veuillez saisir un texte pour le message libre."); }
+});
+
 document.getElementById('saveBtn').addEventListener('click', () => {
   const txt = document.getElementById('transcript').value.trim();
   const customTag = document.getElementById('freeMessageTagInput').value.trim() || 'Note Libre';
@@ -546,6 +570,120 @@ document.getElementById('saveBtn').addEventListener('click', () => {
     document.getElementById('transcript').value = ''; 
     document.getElementById('freeMessageTagInput').value = '';
   } else { alert("Veuillez saisir un texte."); }
+});
+
+// CALCUL TOTAL IMPLIQUÉS / VICTIMES - AMBIANCE
+window.updateAmbianceTotal = function() {
+  const imp = parseInt(document.getElementById('ambVicImpliques').value) || 0;
+  const ur = parseInt(document.getElementById('ambVicUR').value) || 0;
+  const ua = parseInt(document.getElementById('ambVicUA').value) || 0;
+  const dcd = parseInt(document.getElementById('ambVicDCD').value) || 0;
+  const indemnes = parseInt(document.getElementById('ambVicIndemnes').value) || 0;
+  const total = imp + ur + ua + dcd + indemnes;
+
+  const totalTxt = document.getElementById('ambTotalConcernedTxt');
+  if (totalTxt) {
+    totalTxt.textContent = `Nombre total de personnes concernées : ${total} (Impliqués: ${imp}, UR: ${ur}, UA: ${ua}, DCD: ${dcd}, Indemnes: ${indemnes})`;
+  }
+};
+
+// GESTION AFFICHAGE SOUS-OPTIONS INCENDIE - AMBIANCE
+window.toggleIncSubOptions = function(type) {
+  const habOpt = document.getElementById('incHabitationOptions');
+  const erpOpt = document.getElementById('incErpOptions');
+  const indOpt = document.getElementById('incIndustrielOptions');
+  const vehOpt = document.getElementById('incVehiculeOptions');
+
+  if (habOpt) habOpt.classList.add('hidden');
+  if (erpOpt) erpOpt.classList.add('hidden');
+  if (indOpt) indOpt.classList.add('hidden');
+  if (vehOpt) vehOpt.classList.add('hidden');
+
+  if (type === 'Habitation' && habOpt) habOpt.classList.remove('hidden');
+  if (type === 'ERP' && erpOpt) erpOpt.classList.remove('hidden');
+  if (type === 'Industriel' && indOpt) indOpt.classList.remove('hidden');
+  if (type === 'Véhicule' && vehOpt) vehOpt.classList.remove('hidden');
+};
+
+// VALIDATION & SAUVEGARDE MESSAGE D'AMBIANCE
+document.getElementById('saveUrbanAmbianceBtn')?.addEventListener('click', () => {
+  const localisation = document.getElementById('ambLocalisation').value.trim() || 'Non précisée';
+  const acces = document.querySelector('input[name="ambAcces"]:checked')?.value || 'Non précisé';
+  const meteo = document.querySelector('input[name="ambMeteo"]:checked')?.value || 'Non précisée';
+
+  let jeSuisText = `Localisation : ${localisation} | Accès : ${acces} | Météo/Vent : ${meteo}`;
+
+  const imp = document.getElementById('ambVicImpliques').value || '0';
+  const ur = document.getElementById('ambVicUR').value || '0';
+  const ua = document.getElementById('ambVicUA').value || '0';
+  const dcd = document.getElementById('ambVicDCD').value || '0';
+  const indemnes = document.getElementById('ambVicIndemnes').value || '0';
+  const totalPers = parseInt(imp) + parseInt(ur) + parseInt(ua) + parseInt(dcd) + parseInt(indemnes);
+
+  let bilanText = `Bilan : Total ${totalPers} pers. [Impliqués: ${imp}, UR: ${ur}, UA: ${ua}, DCD: ${dcd}, Indemnes: ${indemnes}]`;
+
+  const incType = document.querySelector('input[name="ambIncType"]:checked')?.value;
+  let incDetails = [];
+  if (incType) {
+    let subDetail = incType;
+    if (incType === 'Habitation') {
+      const etage = document.getElementById('ambIncHabEtage').value;
+      const batR = document.getElementById('ambIncHabBatR').value;
+      if (etage || batR) subDetail += ` (Feu: ${etage || '?-'}, Bât: ${batR || '?- '})`;
+    } else if (incType === 'ERP') {
+      let erpTypes = [];
+      document.querySelectorAll('.ambErpType:checked').forEach(cb => erpTypes.push(cb.value));
+      if (erpTypes.length > 0) subDetail += ` (Types: ${erpTypes.join(', ')})`;
+    } else if (incType === 'Industriel') {
+      const classe = document.getElementById('ambIndClasse').checked ? 'Classé' : '';
+      const seveso = document.querySelector('input[name="ambIndSeveso"]:checked')?.value || '';
+      if (classe || seveso) subDetail += ` (${[classe, seveso].filter(Boolean).join(' - ')})`;
+    } else if (incType === 'Véhicule') {
+      const pos = document.querySelector('input[name="ambVehiculePos"]:checked')?.value || '';
+      if (pos) subDetail += ` (${pos})`;
+    }
+    const ampleur = document.getElementById('ambIncAmpleur').value;
+    const fumees = document.getElementById('ambInxFumees').value;
+    if (ampleur) subDetail += ` - Ampleur: ${ampleur}`;
+    if (fumees) subDetail += ` - Fumées: ${fumees}`;
+    incDetails.push(`Incendie -> ${subDetail}`);
+  }
+
+  const vl = document.getElementById('ambSrNbrVL').value.trim();
+  const pl = document.getElementById('ambSrNbrPL').value.trim();
+  const r2 = document.getElementById('ambSrNbr2R').value.trim();
+  const pietons = document.getElementById('ambSrNbrPietons').value.trim();
+  const cinetique = document.querySelector('input[name="ambSrCinetique"]:checked')?.value || '';
+
+  if (vl || pl || r2 || pietons || cinetique) {
+    let srSummary = `VL: ${vl||'0'}, PL: ${pl||'0'}, 2 Roues: ${r2||'0'}, Piétons: ${pietons||'0'}`;
+    if (cinetique) srSummary += ` | Cinétique: ${cinetique}`;
+    incDetails.push(`Secours Routier -> ${srSummary}`);
+  }
+
+  let risques = [];
+  if (document.getElementById('ambRiskGaz').checked) risques.push('Fuite de gaz');
+  if (document.getElementById('ambRiskChimique').checked) risques.push('Produit chimique');
+  if (document.getElementById('ambRiskEffondrement').checked) risques.push('Effondrement');
+  if (document.getElementById('ambRiskInondation').checked) risques.push('Inondation');
+  if (risques.length > 0) incDetails.push(`Risques particuliers -> ${risques.join(', ')}`);
+
+  let renfs = [];
+  document.querySelectorAll('.ambRenfInc:checked').forEach(cb => renfs.push(cb.value));
+  document.querySelectorAll('.ambRenfSan:checked').forEach(cb => renfs.push(cb.value));
+  document.querySelectorAll('.ambRenfApp:checked').forEach(cb => renfs.push(cb.value));
+
+  let text = `Message d'Ambiance :\n` +
+    `- Je suis : ${jeSuisText}\n` +
+    `- ${bilanText}\n` +
+    (incDetails.length > 0 ? `- Je vois : ${incDetails.join(' | ')}\n` : '') +
+    (renfs.length > 0 ? `- Je demande : ${renfs.join(', ')}` : `- Je demande : Aucun renfort immédiat`);
+
+  const isNumbered = document.getElementById('ambNumCheck').checked;
+  saveMemoToStorage(text, 'Ambiance Urbaine', !isNumbered, true, 'memo-badge-forest');
+
+  urbanAmbianceView.classList.add('hidden');
+  urbanMenuView.classList.remove('hidden');
 });
 
 // VALIDATION SECOURS À PERSONNE (SAP)
