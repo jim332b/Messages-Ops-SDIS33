@@ -136,220 +136,232 @@
   </div>
 </div>
 
-<!-- VUE : MESSAGE D'AMBIANCE (FOND VERT) -->
-<div id="urbanAmbianceView" class="card hidden">
-  <button class="btn-forest backToUrbanMenuBtn" style="margin-bottom: 15px;">⬅️ Retour aux messages urbains</button>
-  <h2 style="color: #15803d;">📡 Message d'Ambiance</h2>
-  <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; border: 1px solid #bbf7d0;">
-    
-    <!-- 1. JE SUIS -->
-    <div class="urban-section-title" style="background:#dcfce7; border-left-color:#15803d; color:#166534;">📍 1. JE SUIS (Localisation & Volume)</div>
-    <div class="sub-panel">
-      <div class="form-group">
-        <label>Présenté sur les lieux :</label>
-        <input type="text" id="ambLocalisation" placeholder="ex: Centre de secours / Adresse exacte...">
-      </div>
-      <div class="form-group">
-        <label>Accès :</label>
-        <div class="radio-group">
-          <label class="checkbox-label"><input type="radio" name="ambAcces" value="Facile"> Facile</label>
-          <label class="checkbox-label"><input type="radio" name="ambAcces" value="Difficile"> Difficile</label>
-          <label class="checkbox-label"><input type="radio" name="ambAcces" value="Bloqué"> Bloqué</label>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Météo / Vent :</label>
-        <div class="radio-group">
-          <label class="checkbox-label"><input type="radio" name="ambMeteo" value="Nul"> Nul</label>
-          <label class="checkbox-label"><input type="radio" name="ambMeteo" value="Faible"> Faible</label>
-          <label class="checkbox-label"><input type="radio" name="ambMeteo" value="Fort"> Fort</label>
-        </div>
+<div id="urbanAmbianceView" class="view hidden" style="padding: 15px; max-width: 800px; margin: 0 auto;">
+  <h2>Message d'Ambiance</h2>
+  
+  <!-- 1. JE SUIS -->
+  <div class="ambiance-section" style="margin-bottom: 15px; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
+    <h3 style="background-color: #14532d; color: white; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 1rem;">1. JE SUIS</h3>
+    <div style="margin-bottom: 8px;">
+      <label style="font-size: 0.85rem; font-weight: bold; color: #475569;">Localisation / Adresse :</label>
+      <input type="text" id="ambLocalisation" placeholder="Ex: 12 rue de la République..." class="full-input" style="width: 100%; padding: 6px; margin-top: 4px;">
+    </div>
+    <div style="margin-bottom: 8px;">
+      <label style="font-size: 0.85rem; font-weight: bold; color: #475569;">Accès :</label>
+      <div style="display: flex; gap: 10px; margin-top: 4px;">
+        <label><input type="radio" name="ambAcces" value="Facile"> Facile</label>
+        <label><input type="radio" name="ambAcces" value="Difficile"> Difficile</label>
+        <label><input type="radio" name="ambAcces" value="Bloqué"> Bloqué</label>
       </div>
     </div>
-
-    <!-- VICTIMES / IMPLIQUÉS TRANSVERSAL -->
-    <div class="urban-section-title" style="background:#dcfce7; border-left-color:#15803d; color:#166534;">🏥 Bilan / Victimes &amp; Impliqués</div>
-    <div class="sub-panel">
-      <div class="form-row-5">
-        <div class="form-group"><label style="font-size:0.75rem;">Impliqués</label><input type="number" id="ambVicImpliques" min="0" value="0" oninput="updateAmbianceTotal()"></div>
-        <div class="form-group"><label style="font-size:0.75rem;">UR</label><input type="number" id="ambVicUR" min="0" value="0" oninput="updateAmbianceTotal()"></div>
-        <div class="form-group"><label style="font-size:0.75rem;">UA</label><input type="number" id="ambVicUA" min="0" value="0" oninput="updateAmbianceTotal()"></div>
-        <div class="form-group"><label style="font-size:0.75rem;">DCD</label><input type="number" id="ambVicDCD" min="0" value="0" oninput="updateAmbianceTotal()"></div>
-        <div class="form-group"><label style="font-size:0.75rem;">Indemnes</label><input type="number" id="ambVicIndemnes" min="0" value="0" oninput="updateAmbianceTotal()"></div>
+    <div>
+      <label style="font-size: 0.85rem; font-weight: bold; color: #475569;">Météo / Vent :</label>
+      <div style="display: flex; gap: 10px; margin-top: 4px;">
+        <label><input type="radio" name="ambMeteo" value="Calme / Favorable"> Calme / Favorable</label>
+        <label><input type="radio" name="ambMeteo" value="Vent fort / Défavorable"> Vent fort / Défavorable</label>
+        <label><input type="radio" name="ambMeteo" value="Pluie / Intempéries"> Pluie / Intempéries</label>
       </div>
-      <p id="ambTotalConcernedTxt" style="font-size:0.85rem; font-weight:700; color:#166534; margin-top:8px; margin-bottom:0; text-align:center;">Nombre total de personnes concernées : 0</p>
     </div>
+  </div>
 
-    <!-- 2. JE VOIS -->
-    <div class="urban-section-title" style="background:#dcfce7; border-left-color:#15803d; color:#166534;">🔍 2. JE VOIS (Nature du sinistre)</div>
-    <div class="sub-panel">
-      <div style="font-weight:800; color:#15803d; margin-bottom:6px;">🔥 INCENDIE</div>
-      <div class="form-group">
-        <label>Type d'incendie :</label>
-        <div class="radio-group" style="margin-bottom:6px;">
-          <label class="checkbox-label"><input type="radio" name="ambIncType" value="Habitation" onchange="toggleIncSubOptions('Habitation')"> Habitation</label>
-          <label class="checkbox-label"><input type="radio" name="ambIncType" value="ERP" onchange="toggleIncSubOptions('ERP')"> ERP</label>
-          <label class="checkbox-label"><input type="radio" name="ambIncType" value="Industriel" onchange="toggleIncSubOptions('Industriel')"> Industriel</label>
-          <label class="checkbox-label"><input type="radio" name="ambIncType" value="Véhicule" onchange="toggleIncSubOptions('Véhicule')"> Véhicule</label>
-          <label class="checkbox-label"><input type="radio" name="ambIncType" value="Espace naturel" onchange="toggleIncSubOptions('Espace naturel')"> Espace naturel</label>
-        </div>
+  <!-- BILAN RAPIDE (PERSONNES) -->
+  <div class="ambiance-section" style="margin-bottom: 15px; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
+    <h3 style="background-color: #14532d; color: white; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 1rem;">Bilan Rapide (Personnes concernées)</h3>
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 8px;">
+      <div>
+        <label style="font-size: 0.75rem; font-weight: bold;">Impliqués</label>
+        <input type="number" id="ambVicImpliques" min="0" value="0" style="width: 100%; padding: 4px;" oninput="updateAmbianceTotal()">
       </div>
-
-      <!-- SOUS-OPTIONS HABITATION -->
-      <div id="incHabitationOptions" class="sub-panel hidden" style="background:#f8fafc; margin-top:8px;">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Feu au R+ :</label>
-            <select id="ambIncHabEtage">
-              <option value="">-- Sélectionner --</option>
-              <script>for(let i=0; i<=10; i++) document.write(`<option value="R+${i}">R+${i}</option>`);</script>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Bâtiment R+ :</label>
-            <select id="ambIncHabBatR">
-              <option value="">-- Sélectionner --</option>
-              <script>for(let i=0; i<=10; i++) document.write(`<option value="R+${i}">R+${i}</option>`);</script>
-            </select>
-          </div>
-        </div>
+      <div>
+        <label style="font-size: 0.75rem; font-weight: bold;">UR</label>
+        <input type="number" id="ambVicUR" min="0" value="0" style="width: 100%; padding: 4px;" oninput="updateAmbianceTotal()">
       </div>
-
-      <!-- SOUS-OPTIONS ERP -->
-      <div id="incErpOptions" class="sub-panel hidden" style="background:#f8fafc; margin-top:8px;">
-        <label style="font-weight:700; font-size:0.8rem; margin-bottom:4px; display:block;">Type(s) ERP :</label>
-        <div class="checkbox-grid" style="grid-template-columns: repeat(7, 1fr); gap: 4px; padding:6px;">
-          <label class="checkbox-label"><input type="checkbox" class="ambErpType" value="J"> J</label>
-          <label class="checkbox-label"><input type="checkbox" class="ambErpType" value="L"> L</label>
-          <label class="checkbox-label"><input type="checkbox" class="ambErpType" value="M"> M</label>
-          <label class="checkbox-label"><input type="checkbox" class="ambErpType" value="N"> N</label>
-          <label class="checkbox-label"><input type="checkbox" class="ambErpType" value="O"> O</label>
-          <label class="checkbox-label"><input type="checkbox" class="ambErpType" value="P"> P</label>
-          <label class="checkbox-label"><input type="checkbox" class="ambErpType" value="R"> R</label>
-          <label class="checkbox-label"><input type="checkbox" class="ambErpType" value="S"> S</label>
-          <label class="checkbox-label"><input type="checkbox" class="ambErpType" value="T"> T</label>
-          <label class="checkbox-label"><input type="checkbox" class="ambErpType" value="U"> U</label>
-          <label class="checkbox-label"><input type="checkbox" class="ambErpType" value="V"> V</label>
-          <label class="checkbox-label"><input type="checkbox" class="ambErpType" value="W"> W</label>
-          <label class="checkbox-label"><input type="checkbox" class="ambErpType" value="X"> X</label>
-          <label class="checkbox-label"><input type="checkbox" class="ambErpType" value="Y"> Y</label>
-        </div>
+      <div>
+        <label style="font-size: 0.75rem; font-weight: bold;">UA</label>
+        <input type="number" id="ambVicUA" min="0" value="0" style="width: 100%; padding: 4px;" oninput="updateAmbianceTotal()">
       </div>
+      <div>
+        <label style="font-size: 0.75rem; font-weight: bold;">DCD</label>
+        <input type="number" id="ambVicDCD" min="0" value="0" style="width: 100%; padding: 4px;" oninput="updateAmbianceTotal()">
+      </div>
+      <div>
+        <label style="font-size: 0.75rem; font-weight: bold;">Indemnes</label>
+        <input type="number" id="ambVicIndemnes" min="0" value="0" style="width: 100%; padding: 4px;" oninput="updateAmbianceTotal()">
+      </div>
+    </div>
+    <div id="ambTotalConcernedTxt" style="font-size: 0.85rem; font-weight: bold; color: #14532d;">Nombre total de personnes concernées : 0</div>
+  </div>
 
-      <!-- SOUS-OPTIONS INDUSTRIEL -->
-      <div id="incIndustrielOptions" class="sub-panel hidden" style="background:#f8fafc; margin-top:8px;">
-        <div class="form-row" style="margin-bottom:6px;">
-          <label class="checkbox-label"><input type="checkbox" id="ambIndClasse"> Classé</label>
+  <!-- 2. JE VOIS (DESCRIPTION RAPIDE) -->
+  <div class="ambiance-section" style="margin-bottom: 15px; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
+    <h3 style="background-color: #14532d; color: white; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 1rem;">2. JE VOIS (description rapide)</h3>
+
+    <!-- ACCORDÉON 1 : INCENDIE -->
+    <details class="ambiance-accordion" style="margin-bottom: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f0fdf4;">
+      <summary style="padding: 8px 12px; font-weight: bold; cursor: pointer; color: #14532d;">🔥 Incendie</summary>
+      <div class="accordion-content" style="padding: 10px; border-top: 1px solid #cbd5e1; background: #ffffff;">
+        <div class="radio-group" style="margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 8px;">
+          <label><input type="radio" name="ambIncType" value="Habitation" onclick="toggleIncSubOptions('Habitation')"> Habitation</label>
+          <label><input type="radio" name="ambIncType" value="ERP" onclick="toggleIncSubOptions('ERP')"> ERP</label>
+          <label><input type="radio" name="ambIncType" value="Industriel" onclick="toggleIncSubOptions('Industriel')"> Industriel</label>
+          <label><input type="radio" name="ambIncType" value="Véhicule" onclick="toggleIncSubOptions('Véhicule')"> Véhicule</label>
+          <label><input type="radio" name="ambIncType" value="Espace naturel"> 🌲 Espace naturel (Feu de forêt)</label>
         </div>
-        <div class="form-group">
-          <label style="font-size:0.8rem; font-weight:700;">SEVESO :</label>
-          <div class="radio-group" style="padding:4px 8px;">
-            <label class="checkbox-label"><input type="radio" name="ambIndSeveso" value="Seveso 1"> 1</label>
-            <label class="checkbox-label"><input type="radio" name="ambIndSeveso" value="Seveso 2"> 2</label>
-            <label class="checkbox-label"><input type="radio" name="ambIndSeveso" value="Seveso 3"> 3</label>
+        
+        <!-- Sous-options Habitation (Feu au / d'un bât) -->
+        <div id="incHabitationOptions" class="hidden" style="padding-left: 15px; margin-bottom: 8px;">
+          <div style="display: flex; gap: 10px; margin-bottom: 6px;">
+            <div style="flex: 1;">
+              <label style="font-size: 0.8rem; font-weight: bold; color: #475569;">Feu au :</label>
+              <select id="ambIncHabFeuAu" class="full-input" style="padding: 4px; width: 100%;">
+                <option value="">-- Choisir --</option>
+                <option value="Rdc">Rdc</option><option value="R+1">R+1</option><option value="R+2">R+2</option><option value="R+3">R+3</option><option value="R+4">R+4</option><option value="R+5">R+5</option><option value="R+6">R+6</option><option value="R+7">R+7</option><option value="R+8">R+8</option><option value="R+9">R+9</option><option value="R+10">R+10</option><option value="R+11">R+11</option><option value="R+12">R+12</option><option value="R+13">R+13</option><option value="R+14">R+14</option><option value="R+15">R+15</option><option value="R+16">R+16</option><option value="R+17">R+17</option><option value="R+18">R+18</option><option value="R+19">R+19</option><option value="R+20">R+20</option>
+              </select>
+            </div>
+            <div style="flex: 1;">
+              <label style="font-size: 0.8rem; font-weight: bold; color: #475569;">d'un bât :</label>
+              <select id="ambIncHabBat" class="full-input" style="padding: 4px; width: 100%;">
+                <option value="">-- Choisir --</option>
+                <option value="Rdc">Rdc</option><option value="R+1">R+1</option><option value="R+2">R+2</option><option value="R+3">R+3</option><option value="R+4">R+4</option><option value="R+5">R+5</option><option value="R+6">R+6</option><option value="R+7">R+7</option><option value="R+8">R+8</option><option value="R+9">R+9</option><option value="R+10">R+10</option><option value="R+11">R+11</option><option value="R+12">R+12</option><option value="R+13">R+13</option><option value="R+14">R+14</option><option value="R+15">R+15</option><option value="R+16">R+16</option><option value="R+17">R+17</option><option value="R+18">R+18</option><option value="R+19">R+19</option><option value="R+20">R+20</option>
+              </select>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- SOUS-OPTIONS VÉHICULE -->
-      <div id="incVehiculeOptions" class="sub-panel hidden" style="background:#f8fafc; margin-top:8px;">
-        <div class="radio-group" style="padding:4px 8px;">
-          <label class="checkbox-label"><input type="radio" name="ambVehiculePos" value="Isolé"> Isolé</label>
-          <label class="checkbox-label"><input type="radio" name="ambVehiculePos" value="Groupé"> Groupé</label>
-          <label class="checkbox-label"><input type="radio" name="ambVehiculePos" value="Proche Bat."> Proche Bat.</label>
+        <!-- Sous-options ERP -->
+        <div id="incErpOptions" class="hidden" style="padding-left: 15px; margin-bottom: 8px;">
+          <label style="font-size: 0.85rem; font-weight: bold; color: #475569;">Types ERP :</label>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
+            <label><input type="checkbox" class="ambErpType" value="J"> J</label>
+            <label><input type="checkbox" class="ambErpType" value="L"> L</label>
+            <label><input type="checkbox" class="ambErpType" value="O"> O</label>
+            <label><input type="checkbox" class="ambErpType" value="U"> U</label>
+            <label><input type="checkbox" class="ambErpType" value="P"> P</label>
+            <label><input type="checkbox" class="ambErpType" value="R"> R</label>
+            <label><input type="checkbox" class="ambErpType" value="W"> W</label>
+            <label><input type="checkbox" class="ambErpType" value="N"> N</label>
+	    <label><input type="checkbox" class="ambErpType" value="S"> S</label>
+	    <label><input type="checkbox" class="ambErpType" value="T"> T</label>
+	    <label><input type="checkbox" class="ambErpType" value="V"> V</label>
+	    <label><input type="checkbox" class="ambErpType" value="W"> W</label>
+	    <label><input type="checkbox" class="ambErpType" value="X"> X</label>
+	    <label><input type="checkbox" class="ambErpType" value="Y"> Y</label>
+          </div>
+        </div>
+
+        <!-- Sous-options Industriel -->
+        <div id="incIndustrielOptions" class="hidden" style="padding-left: 15px; margin-bottom: 8px;">
+          <label><input type="checkbox" id="ambIndClasse"> Établissement classé ICPE</label>
+          <div style="display: flex; gap: 10px; margin-top: 4px;">
+            <label><input type="radio" name="ambIndSeveso" value="Seveso Seuil Haut"> Seveso Seuil Haut</label>
+            <label><input type="radio" name="ambIndSeveso" value="Seveso Seuil Bas"> Seveso Seuil Bas</label>
+          </div>
+        </div>
+
+        <!-- Sous-options Véhicule -->
+        <div id="incVehiculeOptions" class="hidden" style="padding-left: 15px; margin-bottom: 8px;">
+          <label><input type="radio" name="ambVehiculePos" value="Feu sur VL/PL isolé"> Isolé</label>
+          <label><input type="radio" name="ambVehiculePos" value="Feu en sous-sol / parking"> En sous-sol / parking</label>
+          <label><input type="radio" name="ambVehiculePos" value="Feu voie publique / bâtiment"> Menaçant un bâtiment</label>
+        </div>
+
+        <!-- Fumées & Ampleur -->
+        <div style="display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 180px;">
+            <label style="font-size: 0.8rem; font-weight: bold; color: #475569;">Fumées :</label>
+            <div style="display: flex; gap: 4px; margin-top: 2px;">
+              <select id="ambFumColor" style="padding: 4px; flex: 1;"><option value="">Couleur</option><option value="Claires">Claires</option><option value="Noires">Noires</option></select>
+              <select id="ambFumDens" style="padding: 4px; flex: 1;"><option value="">Densité</option><option value="Épaisses">Épaisses</option><option value="Légères">Légères</option></select>
+              <select id="ambFumFlow" style="padding: 4px; flex: 1;"><option value="">Flux</option><option value="Laminaires">Laminaires</option><option value="Turbulentes">Turbulentes</option></select>
+            </div>
+          </div>
+          <div style="flex: 1; min-width: 180px;">
+            <label style="font-size: 0.8rem; font-weight: bold; color: #475569;">Ampleur :</label>
+            <div style="display: flex; gap: 4px; margin-top: 2px;">
+              <select id="ambAmpVol" style="padding: 4px; flex: 1;"><option value="">Volume</option><option value="1 pièce">1 pièce</option><option value="1 app">1 app</option><option value="plusieurs app">plusieurs app</option><option value="1 maison">1 maison</option></select>
+              <select id="ambAmpDyn" style="padding: 4px; flex: 1;"><option value="">Dynamique</option><option value="Localisé">Localisé</option><option value="Propagation">Propagation</option></select>
+            </div>
+          </div>
         </div>
       </div>
+    </details>
 
-      <div class="form-row" style="margin-top:8px;">
-        <div>
-          <label>Ampleur :</label>
-          <select id="ambIncAmpleur">
-            <option value="">-- Sélectionner --</option>
-            <option value="Feu de pièce">Feu de pièce</option>
-            <option value="Feu de structure / combles">Feu de structure / combles</option>
-            <option value="Propagation libre">Propagation libre</option>
-          </select>
+    <!-- ACCORDÉON 2 : SECOURS ROUTIERS (AVP) -->
+    <details class="ambiance-accordion" style="margin-bottom: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f0fdf4;">
+      <summary style="padding: 8px 12px; font-weight: bold; cursor: pointer; color: #14532d;">🚗 Secours Routiers (AVP)</summary>
+      <div class="accordion-content" style="padding: 10px; border-top: 1px solid #cbd5e1; background: #ffffff;">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px;">
+          <input type="number" id="ambSrNbrVL" placeholder="Nbr VL" min="0" style="padding:4px;">
+          <input type="number" id="ambSrNbrPL" placeholder="Nbr PL" min="0" style="padding:4px;">
+          <input type="number" id="ambSrNbr2R" placeholder="Nbr 2R" min="0" style="padding:4px;">
+          <input type="number" id="ambSrNbrPietons" placeholder="Piétons" min="0" style="padding:4px;">
         </div>
-        <div>
-          <label>Fumées :</label>
-          <select id="ambInxFumees">
-            <option value="">-- Sélectionner --</option>
-            <option value="Claires">Claires</option>
-            <option value="Noires / Épaisses">Noires / Épaisses</option>
-            <option value="Violentes">Violentes</option>
-          </select>
-        </div>
-      </div>
-
-      <hr style="margin:12px 0; border:0; border-top:1px solid #bbf7d0;">
-      <div style="font-weight:800; color:#15803d; margin-bottom:6px;">🚗 SECOURS ROUTIER (AVP)</div>
-      <div class="form-row-4" style="margin-bottom:6px;">
-        <div class="form-group"><label style="font-size:0.75rem;">VL</label><input type="number" id="ambSrNbrVL" min="0" placeholder="0"></div>
-        <div class="form-group"><label style="font-size:0.75rem;">PL</label><input type="number" id="ambSrNbrPL" min="0" placeholder="0"></div>
-        <div class="form-group"><label style="font-size:0.75rem;">2 Roues</label><input type="number" id="ambSrNbr2R" min="0" placeholder="0"></div>
-        <div class="form-group"><label style="font-size:0.75rem;">Piétons</label><input type="number" id="ambSrNbrPietons" min="0" placeholder="0"></div>
-      </div>
-      <div class="form-group">
-        <label>Cinétique :</label>
-        <div class="radio-group" style="margin-bottom:6px;">
-          <label class="checkbox-label"><input type="radio" name="ambSrCinetique" value="Choc frontal"> Choc frontal</label>
-          <label class="checkbox-label"><input type="radio" name="ambSrCinetique" value="Choc latéral"> Choc latéral</label>
-          <label class="checkbox-label"><input type="radio" name="ambSrCinetique" value="Forte cinétique / Éjection"> Forte cinétique / Éjection</label>
+        <div style="font-size: 0.85rem; font-weight: bold; color: #475569; margin-bottom: 4px;">Cinétique / Situation :</div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <label><input type="radio" name="ambSrCinetique" value="Choc frontal"> Choc frontal</label>
+          <label><input type="radio" name="ambSrCinetique" value="Tonneau(x)"> Tonneau(x)</label>
+          <label><input type="radio" name="ambSrCinetique" value="Encastrement"> Encastrement</label>
+          <label><input type="radio" name="ambSrCinetique" value="Véhicule sur le toit / fossé"> Sur le toit / fossé</label>
         </div>
       </div>
+    </details>
 
-      <hr style="margin:12px 0; border:0; border-top:1px solid #bbf7d0;">
-      <div style="font-weight:800; color:#15803d; margin-bottom:6px;">⚠️ RISQUE PARTICULIER</div>
-      <div class="checkbox-grid" style="border:none; padding:0;">
-        <label class="checkbox-label"><input type="checkbox" id="ambRiskGaz"> Fuite de gaz</label>
-        <label class="checkbox-label"><input type="checkbox" id="ambRiskChimique"> Produit chimique</label>
-        <label class="checkbox-label"><input type="checkbox" id="ambRiskEffondrement"> Effondrement</label>
-        <label class="checkbox-label"><input type="checkbox" id="ambRiskInondation"> Inondation</label>
+    <!-- ACCORDÉON 3 : RISQUE PARTICULIER -->
+    <details class="ambiance-accordion" style="margin-bottom: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f0fdf4;">
+      <summary style="padding: 8px 12px; font-weight: bold; cursor: pointer; color: #14532d;">⚠️ Risque Particulier</summary>
+      <div class="accordion-content" style="padding: 10px; border-top: 1px solid #cbd5e1; background: #ffffff;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label><input type="checkbox" id="ambRiskGaz"> Fuite de gaz / réseau</label>
+          <label><input type="checkbox" id="ambRiskChimique"> Produit chimique / Matière dangereuse</label>
+          <label><input type="checkbox" id="ambRiskEffondrement"> Risque d'effondrement / structure instable</label>
+          <label><input type="checkbox" id="ambRiskInondation"> Inondation / montée des eaux rapide</label>
+        </div>
+      </div>
+    </details>
+
+    <!-- ACCORDÉON 4 : AUTRE -->
+    <details class="ambiance-accordion" style="margin-bottom: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f0fdf4;">
+      <summary style="padding: 8px 12px; font-weight: bold; cursor: pointer; color: #14532d;">📝 Autre (Précisions)</summary>
+      <div class="accordion-content" style="padding: 10px; border-top: 1px solid #cbd5e1; background: #ffffff;">
+        <textarea id="ambAutreTexte" placeholder="Saisissez vos observations complémentaires ou éléments vus sur place..." style="width: 100%; height: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px;"></textarea>
+      </div>
+    </details>
+  </div>
+
+  <!-- 3. JE DEMANDE -->
+  <div class="ambiance-section" style="margin-bottom: 15px; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
+    <h3 style="background-color: #14532d; color: white; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; font-size: 1rem;">3. JE DEMANDE</h3>
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+      <div>
+        <label style="font-size: 0.8rem; font-weight: bold; color: #475569;">Incendie :</label>
+        <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
+          <label><input type="checkbox" class="ambRenfInc" value="EP6"> EP6</label>
+          <label><input type="checkbox" class="ambRenfInc" value="UIFF"> UIFF</label>
+          <label><input type="checkbox" class="ambRenfInc" value="ECH"> ECH</label>
+	  <label><input type="checkbox" class="ambRenfInc" value="Gr INC"> Gr INC</label>
+	  <label><input type="checkbox" class="ambRenfInc" value="Gr ALIM"> Gr ALIM</label>
+        </div>
+      </div>
+      <div>
+        <label style="font-size: 0.8rem; font-weight: bold; color: #475569;">Sanitaire / Divers :</label>
+        <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
+          <label><input type="checkbox" class="ambRenfSan" value="VSAV"> VSAV</label>
+          <label><input type="checkbox" class="ambRenfSan" value="SMUR"> SMUR</label>
+          <label><input type="checkbox" class="ambRenfSan" value="Forces de l'ordre"> Forces de l'ordre</label>
+        </div>
       </div>
     </div>
+  </div>
 
-    <!-- 3. JE DEMANDE -->
-    <div class="urban-section-title" style="background:#dcfce7; border-left-color:#15803d; color:#166534;">👥 3. JE DEMANDE (Renforts immédiats)</div>
-    <div class="sub-panel">
-      <div style="font-weight:700; color:#475569; margin-bottom:4px;">Incendie :</div>
-      <div class="checkbox-grid" style="margin-bottom:8px;">
-        <label class="checkbox-label"><input type="checkbox" class="ambRenfInc" value="EP6"> EP6</label>
-        <label class="checkbox-label"><input type="checkbox" class="ambRenfInc" value="ECH"> ECH</label>
-        <label class="checkbox-label"><input type="checkbox" class="ambRenfInc" value="UNITES"> UNITES</label>
-        <label class="checkbox-label"><input type="checkbox" class="ambRenfInc" value="GPF"> GPF</label>
-        <label class="checkbox-label"><input type="checkbox" class="ambRenfInc" value="ALIM"> ALIM</label>
-        <label class="checkbox-label"><input type="checkbox" class="ambRenfInc" value="BEA"> BEA</label>
-      </div>
-
-      <div style="font-weight:700; color:#475569; margin-bottom:4px;">Sanitaire :</div>
-      <div class="checkbox-grid" style="margin-bottom:8px;">
-        <label class="checkbox-label"><input type="checkbox" class="ambRenfSan" value="VSAV"> VSAV</label>
-        <label class="checkbox-label"><input type="checkbox" class="ambRenfSan" value="SMUR"> SMUR</label>
-        <label class="checkbox-label"><input type="checkbox" class="ambRenfSan" value="VLI"> VLI</label>
-        <label class="checkbox-label"><input type="checkbox" class="ambRenfSan" value="PMA"> PMA</label>
-      </div>
-
-      <div style="font-weight:700; color:#475569; margin-bottom:4px;">Appuis :</div>
-      <div class="checkbox-grid">
-        <label class="checkbox-label"><input type="checkbox" class="ambRenfApp" value="Forces Ordre"> Forces Ordre</label>
-        <label class="checkbox-label"><input type="checkbox" class="ambRenfApp" value="Enedis"> Enedis</label>
-        <label class="checkbox-label"><input type="checkbox" class="ambRenfApp" value="GRDF"> GRDF</label>
-        <label class="checkbox-label"><input type="checkbox" class="ambRenfApp" value="Serv. Eaux"> Serv. Eaux</label>
-        <label class="checkbox-label"><input type="checkbox" class="ambRenfApp" value="Autor. Commu."> Autor. Commu.</label>
-      </div>
+  <!-- OPTIONS DE SAUVEGARDE & BOUTONS -->
+  <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
+    <label><input type="checkbox" id="ambNumCheck" checked> Numéroter le message</label>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn-secondary backToForestMenuBtn" style="padding: 8px 16px;">Annuler</button>
+      <button id="saveUrbanAmbianceBtn" class="btn-primary" style="padding: 8px 16px; background: #14532d; color: white; border: none; border-radius: 4px; cursor: pointer;">💾 Valider Ambiance</button>
     </div>
-
-    <div class="numbering-box">
-      <label class="checkbox-label">
-        <input type="checkbox" id="ambNumCheck" checked>
-        🔢 Numéroter ce message dans la liste
-      </label>
-    </div>
-
-    <button id="saveUrbanAmbianceBtn" class="btn-forest" style="width:100%; padding:12px; margin-top:5px;">💾 Valider Message d'Ambiance</button>
   </div>
 </div>
-
   <!-- VUE URBAIN : FEU URBAIN -->
   <div id="urbanFeuView" class="card hidden">
     <button class="btn-primary backToUrbanMenuBtn" style="margin-bottom: 15px;">⬅️ Retour aux messages urbains</button>
